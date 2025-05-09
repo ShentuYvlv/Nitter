@@ -1,0 +1,24 @@
+services:
+  nitter:
+    image: zedeus/nitter:latest
+    container_name: nitter
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./nitter.conf:/src/nitter.conf:ro
+      - ./sessions.jsonl:/src/sessions.jsonl:ro
+      - ./cache:/src/cache
+    depends_on:
+      - nitter-redis
+    restart: unless-stopped
+
+  nitter-redis:
+    image: redis:alpine
+    container_name: nitter-redis
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - nitter-redis:/data
+    restart: unless-stopped
+
+volumes:
+  nitter-redis:
