@@ -13,6 +13,7 @@ import sys
 from datetime import datetime
 from typing import List, Dict, Any, Set
 from bs4 import BeautifulSoup
+import logging
 
 # 确保输出正确显示中文
 if sys.stdout.encoding != 'utf-8':
@@ -25,6 +26,11 @@ if sys.stdout.encoding != 'utf-8':
     except:
         pass
 
+logging.basicConfig(
+    level=logging.DEBUG,  # 改为DEBUG
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler()]
+)
 
 class NitterScraper:
     def __init__(self, base_url: str = "http://localhost:8080", history_file: str = "tweet_history.json"):
