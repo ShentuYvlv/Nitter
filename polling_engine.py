@@ -49,13 +49,13 @@ DEFAULT_STATE = {
 }
 
 # 轮询配置
-POLL_INTERVAL = 15          # 统一轮询间隔（秒）- 从30秒减少到15秒
-CONCURRENT_USERS = 5        # 并发轮询用户数 - 降低到5避免429错误
-REQUEST_TIMEOUT = 5         # 请求超时时间（秒）- 从15秒减少到5秒
-MAX_RETRIES = 2             # 最大重试次数 - 从3次减少到2次
-RETRY_DELAYS = [0.5, 1.0]   # 重试延迟（秒）- 大幅减少延迟
+POLL_INTERVAL = 15          # 统一轮询间隔（秒）
+CONCURRENT_USERS = 10        # 每个实例并发数 - 降低到3避免429错误
+REQUEST_TIMEOUT = 5         # 请求超时时间（秒）
+MAX_RETRIES = 2             # 最大重试次数
+RETRY_DELAYS = [0.5, 1.0]   # 重试延迟（秒）
 RATE_LIMIT_DELAY = 2.0      # 遇到429错误时的额外延迟
-BATCH_DELAY = 0.5           # 批次间基础延迟 - 增加到0.5秒
+BATCH_DELAY = 0.5           # 批次间基础延迟
 
 @dataclass
 class NitterInstance:
@@ -64,7 +64,17 @@ class NitterInstance:
     consecutive_failures: int = 0
     last_failure: Optional[float] = None
     active_connections: int = 0
-    max_connections: int = 100
+    max_connections: int = 50
+    
+    # 新增：多实例负载均衡字段
+    assigned_users: int = 0          # 分配的用户数
+    recent_429_count: int = 0        # 最近的429错误数
+    success_rate: float = 1.0        # 成功率
+    avg_response_time: float = 0.0   # 平均响应时间
+    last_health_check: Optional[float] = None  # 最后健康检查时间
+    is_healthy: bool = True          # 健康状态
+    total_requests: int = 0          # 总请求数
+    total_429_errors: int = 0        # 总429错误数
 
 class StateManager:
     """状态管理器 - 使用JSON文件存储所有状态"""
@@ -129,6 +139,11 @@ class EnhancedPollingEngine:
         self.use_sse = True  # 启用SSE
         self.sse_connections = {}  # 存储SSE连接
         
+        # 多实例负载均衡
+        self.user_instance_mapping = {}  # 用户到实例的映射
+        self.instance_stats = {}         # 实例统计信息
+        self.health_check_interval = 300 # 健康检查间隔（5分钟）
+        
         # ETag优化统计
         self.etag_stats = {
             "total_requests": 0,
@@ -138,7 +153,7 @@ class EnhancedPollingEngine:
             "no_etag_requests": 0  # 不支持ETag的请求
         }
         
-        # 动态并发控制
+        # 动态并发控制（现在按实例管理）
         self.current_concurrent = CONCURRENT_USERS
         self.recent_errors = []  # 记录最近的错误
         self.max_concurrent = 5  # 最大并发数
@@ -163,7 +178,51 @@ class EnhancedPollingEngine:
         except redis.ConnectionError as e:
             logger.error(f"无法连接到Redis: {e}")
             raise
+            
+        # 初始化实例统计
+        for instance in self.instances:
+            self.instance_stats[instance.url] = {
+                "requests_this_cycle": 0,
+                "errors_this_cycle": 0,
+                "response_times": [],
+                "last_reset": time.time()
+            }
+            
+        logger.info(f"初始化完成，使用 {len(self.instances)} 个Nitter实例")
+        self.print_instance_info()
         
+    def print_instance_info(self):
+        """打印实例信息"""
+        logger.info(f"=== Nitter实例信息 ===")
+        for i, instance in enumerate(self.instances):
+            logger.info(f"实例 {i+1}: {instance.url}")
+            logger.info(f"  权重: {instance.weight}")
+            logger.info(f"  当前连接数: {instance.active_connections}")
+            logger.info(f"  最大连接数: {instance.max_connections}")
+            logger.info(f"  分配的用户数: {instance.assigned_users}")
+            logger.info(f"  最近的429错误数: {instance.recent_429_count}")
+            logger.info(f"  成功率: {instance.success_rate:.2%}")
+            logger.info(f"  平均响应时间: {instance.avg_response_time:.2f}秒")
+            logger.info(f"  健康状态: {'健康' if instance.is_healthy else '不健康'}")
+            logger.info(f"  总请求数: {instance.total_requests}")
+            logger.info(f"  总429错误数: {instance.total_429_errors}")
+        logger.info(f"======================")
+        
+        # 检查用户分配映射
+        mapping_count = len(self.user_instance_mapping)
+        logger.info(f"用户实例映射数量: {mapping_count}")
+        
+        # 统计每个实例的分配情况
+        instance_user_count = {}
+        for user_id, instance in self.user_instance_mapping.items():
+            url = instance.url
+            instance_user_count[url] = instance_user_count.get(url, 0) + 1
+        
+        logger.info("实际映射分布:")
+        for url, count in instance_user_count.items():
+            logger.info(f"  {url}: {count} 个用户")
+        logger.info(f"=======================")
+    
     def load_following_list(self) -> List[Dict]:
         """加载关注用户列表"""
         try:
@@ -176,26 +235,146 @@ class EnhancedPollingEngine:
             return []
             
     def get_instance_for_user(self, user_id: str) -> NitterInstance:
-        """为特定用户选择实例（一致性哈希）"""
-        if len(self.instances) == 1:
-            return self.instances[0]
-            
-        # 使用用户ID的哈希值选择实例
-        hash_value = int(hashlib.md5(user_id.encode()).hexdigest(), 16)
-        instance_index = hash_value % len(self.instances)
+        """为特定用户选择实例（智能负载均衡）"""
+        # 如果用户已有分配的实例，直接返回（除非实例真的不健康）
+        if user_id in self.user_instance_mapping:
+            assigned_instance = self.user_instance_mapping[user_id]
+            # 只有在实例真正不健康时才重新分配（更严格的健康检查）
+            if (assigned_instance.is_healthy and 
+                assigned_instance.recent_429_count < 20):  # 放宽429错误限制，避免频繁重分配
+                logger.debug(f"用户 {user_id} 使用已分配实例 {assigned_instance.url}")
+                return assigned_instance
+            else:
+                logger.info(f"用户 {user_id} 的分配实例 {assigned_instance.url} 不健康，重新分配")
+                # 从不健康实例移除用户
+                if assigned_instance.assigned_users > 0:
+                    assigned_instance.assigned_users -= 1
         
-        # 如果选中的实例不可用，尝试下一个
-        for i in range(len(self.instances)):
-            idx = (instance_index + i) % len(self.instances)
-            instance = self.instances[idx]
+        # 为用户重新分配健康的实例（这种情况应该很少发生）
+        healthy_instances = [inst for inst in self.instances if inst.is_healthy]
+        
+        if not healthy_instances:
+            logger.warning("没有健康的实例可用，使用权重最高的实例")
+            selected_instance = max(self.instances, key=lambda x: x.weight)
+        else:
+            # 选择负载最轻的健康实例（使用多个指标）
+            selected_instance = min(healthy_instances, 
+                                  key=lambda x: (x.assigned_users, x.recent_429_count, -x.success_rate))
+        
+        # 更新用户分配
+        self.user_instance_mapping[user_id] = selected_instance
+        selected_instance.assigned_users += 1
+        
+        logger.info(f"用户 {user_id} 重新分配到实例 {selected_instance.url} (分配用户数: {selected_instance.assigned_users})")
+        return selected_instance
+    
+    def update_instance_stats(self, instance: NitterInstance, success: bool, response_time: float, is_429: bool = False):
+        """更新实例统计信息"""
+        current_time = time.time()
+        stats = self.instance_stats[instance.url]
+        
+        # 更新基础统计
+        instance.total_requests += 1
+        stats["requests_this_cycle"] += 1
+        stats["response_times"].append(response_time)
+        
+        if is_429:
+            instance.total_429_errors += 1
+            instance.recent_429_count += 1
+            stats["errors_this_cycle"] += 1
+            logger.warning(f"实例 {instance.url} 遇到429错误，当前周期429错误数: {instance.recent_429_count}")
+        elif not success:
+            stats["errors_this_cycle"] += 1
+        
+        # 计算成功率
+        if instance.total_requests > 0:
+            instance.success_rate = (instance.total_requests - instance.total_429_errors) / instance.total_requests
+        
+        # 计算平均响应时间
+        if stats["response_times"]:
+            instance.avg_response_time = sum(stats["response_times"]) / len(stats["response_times"])
+        
+        # 更新健康状态
+        self.update_instance_health(instance)
+        
+        # 定期重置周期统计
+        if current_time - stats["last_reset"] > 300:  # 5分钟重置一次
+            instance.recent_429_count = 0
+            stats["requests_this_cycle"] = 0
+            stats["errors_this_cycle"] = 0
+            stats["response_times"] = []
+            stats["last_reset"] = current_time
+            logger.info(f"重置实例 {instance.url} 周期统计")
+    
+    def update_instance_health(self, instance: NitterInstance):
+        """更新实例健康状态"""
+        # 健康判断标准
+        max_429_errors = 15  # 周期内最大429错误数
+        min_success_rate = 0.6  # 最小成功率
+        
+        was_healthy = instance.is_healthy
+        
+        # 判断是否健康
+        instance.is_healthy = (
+            instance.recent_429_count < max_429_errors and
+            instance.success_rate >= min_success_rate
+        )
+        
+        # 如果健康状态发生变化，记录日志
+        if was_healthy != instance.is_healthy:
+            status = "健康" if instance.is_healthy else "不健康"
+            logger.warning(f"实例 {instance.url} 状态变更为: {status}")
+            logger.info(f"  - 最近429错误: {instance.recent_429_count}")
+            logger.info(f"  - 成功率: {instance.success_rate:.2%}")
+            logger.info(f"  - 分配用户: {instance.assigned_users}")
+    
+    def rebalance_users(self):
+        """重新平衡用户分配"""
+        healthy_instances = [inst for inst in self.instances if inst.is_healthy]
+        
+        if len(healthy_instances) == 0:
+            logger.error("没有健康的实例，无法重新平衡")
+            return
+        
+        total_users = len(self.user_instance_mapping)
+        users_per_instance = total_users // len(healthy_instances)
+        extra_users = total_users % len(healthy_instances)
+        
+        logger.info(f"开始重新平衡 {total_users} 个用户到 {len(healthy_instances)} 个健康实例")
+        
+        # 重置所有实例的用户计数
+        for instance in self.instances:
+            instance.assigned_users = 0
+        
+        # 重新分配用户
+        user_list = list(self.user_instance_mapping.keys())
+        user_index = 0
+        
+        for i, instance in enumerate(healthy_instances):
+            # 计算这个实例应该分配多少用户
+            target_users = users_per_instance + (1 if i < extra_users else 0)
             
-            # 检查实例健康状态
-            if (instance.weight > 1.0 and 
-                instance.active_connections < instance.max_connections):
-                return instance
-                
-        # 如果所有实例都不理想，返回权重最高的
-        return max(self.instances, key=lambda x: x.weight)
+            for _ in range(target_users):
+                if user_index < len(user_list):
+                    user_id = user_list[user_index]
+                    self.user_instance_mapping[user_id] = instance
+                    instance.assigned_users += 1
+                    user_index += 1
+        
+        logger.info("用户重新平衡完成")
+        self.print_load_distribution()
+    
+    def print_load_distribution(self):
+        """打印负载分布情况"""
+        logger.info("=== 实例负载分布 ===")
+        for instance in self.instances:
+            status = "🟢" if instance.is_healthy else "🔴"
+            logger.info(f"{status} {instance.url}:")
+            logger.info(f"  分配用户: {instance.assigned_users}")
+            logger.info(f"  429错误: {instance.recent_429_count}")
+            logger.info(f"  成功率: {instance.success_rate:.1%}")
+            logger.info(f"  响应时间: {instance.avg_response_time:.2f}s")
+        logger.info("==================")
     
     async def setup_sse_connection(self, user_id: str):
         """为用户建立SSE连接"""
@@ -264,7 +443,7 @@ class EnhancedPollingEngine:
     
     async def fetch_with_etag_optimization(self, session: aiohttp.ClientSession, 
                                           user_id: str) -> bool:
-        """带ETag优化的获取方法"""
+        """带ETag优化的获取方法（多实例版本）"""
         instance = self.get_instance_for_user(user_id)
         url = f"{instance.url}/{user_id}/rss"
         
@@ -283,6 +462,8 @@ class EnhancedPollingEngine:
             self.etag_stats["no_etag_requests"] += 1
         
         start_time = time.time()
+        success = False
+        is_429 = False
         
         try:
             async with session.get(url, headers=headers, timeout=5) as response:
@@ -295,8 +476,9 @@ class EnhancedPollingEngine:
                         # 估算节省的带宽（平均RSS大小约50KB）
                         self.etag_stats["bandwidth_saved"] += 50 * 1024
                     
-                    logger.info(f"🎯 用户 {user_id} ETag缓存命中！耗时: {request_duration:.2f}秒")
-                    return False
+                    logger.info(f"🎯 用户 {user_id} ETag缓存命中！耗时: {request_duration:.2f}秒 [实例: {instance.url}]")
+                    success = True
+                    result = False
                     
                 elif response.status == 200:
                     if etag_used:
@@ -312,12 +494,14 @@ class EnhancedPollingEngine:
                         logger.debug(f"用户 {user_id} 保存新ETag: {new_etag[:20]}...")
                     
                     content = await response.text()
-                    logger.info(f"📥 用户 {user_id} 获取新内容，耗时: {request_duration:.2f}秒，大小: {len(content)} 字节")
+                    logger.info(f"📥 用户 {user_id} 获取新内容，耗时: {request_duration:.2f}秒，大小: {len(content)} 字节 [实例: {instance.url}]")
                     
-                    return await self.process_rss_content(user_id, content)
+                    result = await self.process_rss_content(user_id, content)
+                    success = True
                     
                 elif response.status == 429:
-                    logger.warning(f"⏰ 用户 {user_id} 遇到速率限制: HTTP 429")
+                    logger.warning(f"⏰ 用户 {user_id} 遇到速率限制: HTTP 429 [实例: {instance.url}]")
+                    is_429 = True
                     # 抛出特殊异常以便在批次处理中识别
                     raise aiohttp.ClientResponseError(
                         request_info=response.request_info,
@@ -325,23 +509,34 @@ class EnhancedPollingEngine:
                         status=429,
                         message="Rate Limited"
                     )
-                    
                 else:
-                    logger.warning(f"❌ 用户 {user_id} 请求失败: HTTP {response.status}")
-                    # 其他HTTP错误也抛出异常
-                    raise aiohttp.ClientResponseError(
-                        request_info=response.request_info,
-                        history=response.history,
-                        status=response.status,
-                        message=f"HTTP {response.status}"
-                    )
+                    logger.warning(f"❌ 用户 {user_id} 获取失败: HTTP {response.status} [实例: {instance.url}]")
+                    success = False
+                    result = False
                     
-        except aiohttp.ClientResponseError:
-            # 重新抛出HTTP错误以便统计
-            raise
+        except aiohttp.ClientResponseError as e:
+            request_duration = time.time() - start_time
+            if e.status == 429:
+                is_429 = True
+                logger.warning(f"💥 用户 {user_id} 429限流错误，耗时: {request_duration:.2f}秒 [实例: {instance.url}]")
+            else:
+                logger.error(f"💥 用户 {user_id} HTTP错误: {e.status}，耗时: {request_duration:.2f}秒 [实例: {instance.url}]")
+            success = False
+            result = False
+            raise  # 重新抛出异常以便上层处理
+            
         except Exception as e:
-            logger.error(f"🔥 用户 {user_id} 请求异常: {e}")
-            raise
+            request_duration = time.time() - start_time
+            logger.error(f"💥 用户 {user_id} 网络错误: {e}，耗时: {request_duration:.2f}秒 [实例: {instance.url}]")
+            success = False
+            result = False
+            
+        finally:
+            # 更新实例统计
+            request_duration = time.time() - start_time
+            self.update_instance_stats(instance, success, request_duration, is_429)
+            
+        return result if success else False
     
     def print_etag_stats(self):
         """打印ETag统计信息"""
@@ -621,18 +816,75 @@ class EnhancedPollingEngine:
         logger.info("ETag支持检查完成")
 
     async def initialize_users(self):
-        """初始化用户列表"""
+        """初始化用户和ETag检查"""
+        # 加载关注列表
         following_list = self.load_following_list()
         
-        for user in following_list:
-            user_id = user.get("userId", "").lower()
-            if user_id and user_id not in self.state_manager.get_all_users():
-                self.state_manager.update_user_state(user_id, initialized=False)
+        # 初始化状态管理器中的用户
+        for user_info in following_list:
+            user_id = user_info['userId']  # 使用userId作为用户ID
+            if not self.state_manager.get_user_state(user_id):
+                # 如果用户不存在，初始化用户状态
+                self.state_manager.update_user_state(
+                    user_id,
+                    display_name=user_info.get('name', user_info.get('username', user_id)),  # 使用name或username作为显示名
+                    last_check=None,
+                    last_tweet_id=None,
+                    etag=None
+                )
         
-        logger.info(f"初始化完成，共 {len(self.state_manager.get_all_users())} 个用户")
+        logger.info(f"成功加载 {len(following_list)} 个关注用户")
         
-        # 检查Nitter实例ETag支持
+        # 检查ETag支持
         await self.check_etag_support()
+        
+        # 执行初始负载均衡
+        self.perform_initial_load_balancing()
+        
+        # 打印详细的实例信息用于调试
+        self.print_instance_info()
+        
+        logger.info(f"初始化完成，共 {len(following_list)} 个用户")
+        
+    def perform_initial_load_balancing(self):
+        """执行初始负载均衡"""
+        # 只对当前following_list中的用户进行负载均衡，不包括历史用户
+        following_list = self.load_following_list()
+        users = [user_info['userId'] for user_info in following_list]  # 只使用当前关注列表的用户
+        
+        total_users = len(users)
+        instance_count = len(self.instances)
+        
+        if instance_count == 0:
+            logger.error("没有可用的Nitter实例")
+            return
+            
+        users_per_instance = total_users // instance_count
+        extra_users = total_users % instance_count
+        
+        logger.info(f"开始分配 {total_users} 个用户到 {instance_count} 个实例")
+        logger.info(f"每个实例平均 {users_per_instance} 个用户，{extra_users} 个实例各多分配1个用户")
+        
+        # 清空现有映射
+        self.user_instance_mapping.clear()
+        for instance in self.instances:
+            instance.assigned_users = 0
+        
+        user_index = 0
+        for i, instance in enumerate(self.instances):
+            # 计算这个实例应该分配多少用户
+            target_users = users_per_instance + (1 if i < extra_users else 0)
+            
+            for _ in range(target_users):
+                if user_index < len(users):
+                    user_id = users[user_index]
+                    self.user_instance_mapping[user_id] = instance
+                    instance.assigned_users += 1
+                    user_index += 1
+            
+            logger.info(f"实例 {instance.url} 分配了 {instance.assigned_users} 个用户")
+        
+        logger.info("初始负载均衡完成")
     
     def adjust_concurrency(self, success_count: int, total_count: int, error_count: int):
         """根据成功率动态调整并发数"""
@@ -661,7 +913,17 @@ class EnhancedPollingEngine:
     async def poll_users_batch(self, user_batch: List[str]):
         """批量轮询用户"""
         batch_start = time.time()
-        logger.info(f"开始处理批次: {len(user_batch)} 个用户 - {user_batch}")
+        
+        # 统计本批次用户的实例分布
+        batch_instance_count = {}
+        for user_id in user_batch:
+            instance = self.get_instance_for_user(user_id)
+            url = instance.url
+            batch_instance_count[url] = batch_instance_count.get(url, 0) + 1
+        
+        logger.info(f"开始处理批次: {len(user_batch)} 个用户")
+        logger.info(f"批次实例分布: {batch_instance_count}")
+        logger.debug(f"用户列表: {user_batch}")
         
         async with aiohttp.ClientSession() as session:
             tasks = [self.fetch_with_etag_optimization(session, user_id) for user_id in user_batch]
@@ -728,6 +990,8 @@ class EnhancedPollingEngine:
         await self.send_test_tweet()
         
         cycle_count = 0
+        last_rebalance_cycle = 0
+        
         while True:
             try:
                 cycle_count += 1
@@ -742,6 +1006,16 @@ class EnhancedPollingEngine:
                 
                 pending_count = len(self.pending_users)
                 logger.info(f"本轮将处理 {len(users)} 个用户，并发数: {self.current_concurrent}，待处理队列: {pending_count} 个用户")
+                
+                # 每5轮检查是否需要重新平衡
+                if cycle_count - last_rebalance_cycle >= 5:
+                    unhealthy_instances = [inst for inst in self.instances if not inst.is_healthy]
+                    if unhealthy_instances:
+                        logger.warning(f"发现 {len(unhealthy_instances)} 个不健康实例，执行重新平衡")
+                        self.rebalance_users()
+                        last_rebalance_cycle = cycle_count
+                    else:
+                        logger.info("所有实例健康，跳过重新平衡")
                 
                 # 使用新的批次获取逻辑
                 batch_count = 0
@@ -769,6 +1043,10 @@ class EnhancedPollingEngine:
                 cycle_duration = time.time() - cycle_start
                 remaining_pending = len(self.pending_users)
                 logger.info(f"第 {cycle_count} 轮轮询完成! 总耗时: {cycle_duration:.2f}秒, 状态保存耗时: {save_duration:.2f}秒, 剩余待处理: {remaining_pending} 个用户")
+                
+                # 每10轮打印负载分布
+                if cycle_count % 10 == 0:
+                    self.print_load_distribution()
                 
                 # 等待下一轮
                 logger.info(f"等待 {POLL_INTERVAL} 秒后开始下一轮...")
