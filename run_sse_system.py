@@ -15,7 +15,7 @@ def main():
     
     parser.add_argument(
         "--following-file",
-        default="following_list.json",
+        default="E:\\all code\\MESSAGE\\nitter\\config\\following_list.json",
         help="关注列表文件路径 (默认: following_list.json)"
     )
     

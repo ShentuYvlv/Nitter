@@ -35,7 +35,7 @@ REDIS_DB = int(os.environ.get("REDIS_DB", 0))
 REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", None)
 
 # 推文流配置
-TWEET_STREAM_KEY = "tweet_stream"
+TWEET_STREAM_KEY = "tweets"  # 与轮询引擎保持一致
 LAST_STREAM_ID_KEY = "last_stream_id"
 DEFAULT_FIRST_STREAM_ID = "$"  # 从最新消息开始
 
