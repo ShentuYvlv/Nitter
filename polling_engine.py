@@ -50,7 +50,7 @@ DEFAULT_STATE = {
 
 # 轮询配置
 POLL_INTERVAL = 15          # 统一轮询间隔（秒）- 从30秒减少到15秒
-CONCURRENT_USERS = 8        # 并发轮询用户数 - 降低到5避免429错误
+CONCURRENT_USERS = 5        # 并发轮询用户数 - 降低到5避免429错误
 REQUEST_TIMEOUT = 5         # 请求超时时间（秒）- 从15秒减少到5秒
 MAX_RETRIES = 2             # 最大重试次数 - 从3次减少到2次
 RETRY_DELAYS = [0.5, 1.0]   # 重试延迟（秒）- 大幅减少延迟
