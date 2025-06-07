@@ -477,6 +477,15 @@ class EnhancedPollingEngine:
                         self.etag_stats["bandwidth_saved"] += 50 * 1024
                     
                     logger.info(f"🎯 用户 {user_id} ETag缓存命中！耗时: {request_duration:.2f}秒 [实例: {instance.url}]")
+                    
+                    # 缓存命中也要更新检查时间
+                    self.state_manager.update_user_state(
+                        user_id,
+                        last_check_time=time.time(),
+                        last_success_time=time.time()
+                    )
+                    logger.debug(f"🔄 更新用户 {user_id} 状态：ETag缓存命中")
+                    
                     success = True
                     result = False
                     
@@ -489,7 +498,8 @@ class EnhancedPollingEngine:
                         new_etag = response.headers["ETag"]
                         self.state_manager.update_user_state(
                             user_id, 
-                            etag=new_etag
+                            etag=new_etag,
+                            last_check_time=time.time()
                         )
                         logger.debug(f"用户 {user_id} 保存新ETag: {new_etag[:20]}...")
                     
@@ -502,6 +512,14 @@ class EnhancedPollingEngine:
                 elif response.status == 429:
                     logger.warning(f"⏰ 用户 {user_id} 遇到速率限制: HTTP 429 [实例: {instance.url}]")
                     is_429 = True
+                    # 429错误也要更新检查时间
+                    self.state_manager.update_user_state(
+                        user_id,
+                        last_check_time=time.time(),
+                        rate_limit_count=user_state.get("rate_limit_count", 0) + 1
+                    )
+                    logger.debug(f"🔄 更新用户 {user_id} 状态：429限流错误")
+                    
                     # 抛出特殊异常以便在批次处理中识别
                     raise aiohttp.ClientResponseError(
                         request_info=response.request_info,
@@ -511,6 +529,13 @@ class EnhancedPollingEngine:
                     )
                 else:
                     logger.warning(f"❌ 用户 {user_id} 获取失败: HTTP {response.status} [实例: {instance.url}]")
+                    # 其他HTTP错误也要更新检查时间
+                    self.state_manager.update_user_state(
+                        user_id,
+                        last_check_time=time.time(),
+                        http_error_count=user_state.get("http_error_count", 0) + 1
+                    )
+                    logger.debug(f"🔄 更新用户 {user_id} 状态：HTTP {response.status} 错误")
                     success = False
                     result = False
                     
@@ -528,6 +553,13 @@ class EnhancedPollingEngine:
         except Exception as e:
             request_duration = time.time() - start_time
             logger.error(f"💥 用户 {user_id} 网络错误: {e}，耗时: {request_duration:.2f}秒 [实例: {instance.url}]")
+            # 网络错误也要更新检查时间
+            self.state_manager.update_user_state(
+                user_id,
+                last_check_time=time.time(),
+                network_error_count=user_state.get("network_error_count", 0) + 1
+            )
+            logger.debug(f"🔄 更新用户 {user_id} 状态：网络错误")
             success = False
             result = False
             
@@ -576,6 +608,7 @@ class EnhancedPollingEngine:
             items = root.findall(".//item")
             
             if not items:
+                logger.debug(f"用户 {user_id} RSS没有推文项目")
                 return False
                 
             # 尝试从RSS中提取用户名
@@ -686,7 +719,19 @@ class EnhancedPollingEngine:
             user_state = self.state_manager.get_user_state(user_id)
             
             # 检查是否为新推文
-            if user_state.get("last_tweet_id") == tweet_id:
+            current_last_tweet_id = user_state.get("last_tweet_id")
+            logger.debug(f"用户 {user_id} 当前保存的tweet_id: {current_last_tweet_id}, 新tweet_id: {tweet_id}")
+            
+            if current_last_tweet_id == tweet_id:
+                logger.debug(f"用户 {user_id} 推文未更新，跳过")
+                # 即使没有新推文，也要更新最后检查时间和成功时间
+                self.state_manager.update_user_state(
+                    user_id,
+                    last_check_time=time.time(),
+                    last_success_time=time.time(),
+                    username=username
+                )
+                logger.debug(f"🔄 更新用户 {user_id} 状态：无新推文但更新检查时间")
                 return False
                         
             # 解析发布时间
@@ -697,7 +742,14 @@ class EnhancedPollingEngine:
                 # 如果是首次运行，只推送当日推文
                 if not user_state.get("initialized") and pub_time.date() != today:
                     logger.info(f"用户 {user_id} 首次运行，跳过非当日推文: {pub_time.date()}")
-                    self.state_manager.update_user_state(user_id, last_tweet_id=tweet_id, initialized=True)
+                    self.state_manager.update_user_state(
+                        user_id, 
+                        last_tweet_id=tweet_id, 
+                        initialized=True,
+                        last_check_time=time.time(),
+                        username=username
+                    )
+                    logger.debug(f"🔄 更新用户 {user_id} 状态：首次运行初始化")
                     return False
                     
             except Exception as e:
@@ -731,22 +783,46 @@ class EnhancedPollingEngine:
                     user_id,
                     last_tweet_id=tweet_id,
                     last_success_time=time.time(),
+                    last_check_time=time.time(),
                     initialized=True,
                     username=username  # 保存用户名到状态
                 )
                 
-                logger.info(f"用户 {username}(@{user_id}) 新推文已推送: {tweet_id}")
+                logger.info(f"✅ 用户 {username}(@{user_id}) 新推文已推送: {tweet_id}")
+                logger.debug(f"🔄 更新用户 {user_id} 状态：新推文 {tweet_id}")
                 return True
                 
             except Exception as e:
                 logger.error(f"推文添加到Redis失败: {e}, 推文数据: {tweet_data}")
+                # 即使Redis失败，也要更新状态避免重复尝试
+                self.state_manager.update_user_state(
+                    user_id,
+                    last_tweet_id=tweet_id,
+                    last_check_time=time.time(),
+                    username=username
+                )
+                logger.debug(f"🔄 更新用户 {user_id} 状态：Redis失败但更新tweet_id")
                 return False
                 
         except ET.ParseError as e:
             logger.error(f"解析用户 {user_id} RSS失败: {e}")
+            # 解析失败也要更新检查时间
+            self.state_manager.update_user_state(
+                user_id,
+                last_check_time=time.time(),
+                parse_error_count=user_state.get("parse_error_count", 0) + 1
+            )
+            logger.debug(f"🔄 更新用户 {user_id} 状态：RSS解析失败")
             return False
         except Exception as e:
             logger.error(f"处理RSS内容时出错: {user_id}, {e}, 推文数据: {tweet_data}")
+            # 其他错误也要更新检查时间
+            self.state_manager.update_user_state(
+                user_id,
+                last_check_time=time.time(),
+                error_count=user_state.get("error_count", 0) + 1
+            )
+            logger.debug(f"🔄 更新用户 {user_id} 状态：处理出错")
             return False
     
     def parse_date(self, date_str: str) -> datetime:
@@ -1037,8 +1113,10 @@ class EnhancedPollingEngine:
                 
                 # 保存状态
                 save_start = time.time()
+                logger.info(f"💾 开始保存状态文件...")
                 self.state_manager.save_state()
                 save_duration = time.time() - save_start
+                logger.info(f"💾 状态文件保存完成，耗时: {save_duration:.2f}秒")
                 
                 cycle_duration = time.time() - cycle_start
                 remaining_pending = len(self.pending_users)
@@ -1054,6 +1132,13 @@ class EnhancedPollingEngine:
                 
             except Exception as e:
                 logger.error(f"轮询过程出错: {e}")
+                # 即使出错也要保存状态
+                try:
+                    logger.info(f"💾 异常情况下保存状态...")
+                    self.state_manager.save_state()
+                    logger.info(f"💾 异常情况下状态保存完成")
+                except Exception as save_error:
+                    logger.error(f"💾 异常情况下保存状态失败: {save_error}")
                 await asyncio.sleep(5)
     
     async def send_test_tweet(self):
