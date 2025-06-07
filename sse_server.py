@@ -291,6 +291,42 @@ HTML_TEMPLATE = """
             word-wrap: break-word;
         }
         
+        .tweet-images {
+            margin: 12px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .tweet-image {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 12px;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            border: 1px solid #e1e8ed;
+        }
+        
+        .tweet-image:hover {
+            transform: scale(1.02);
+        }
+        
+        /* 多图片布局 */
+        .tweet-images:has(.tweet-image:nth-child(2)) .tweet-image {
+            flex: 1;
+            min-width: 0;
+            max-width: calc(50% - 4px);
+        }
+        
+        .tweet-images:has(.tweet-image:nth-child(3)) .tweet-image {
+            max-width: calc(33.333% - 6px);
+        }
+        
+        .tweet-images:has(.tweet-image:nth-child(4)) .tweet-image {
+            max-width: calc(25% - 6px);
+        }
+        
         .tweet-footer {
             font-size: 14px;
             color: #657786;
@@ -975,16 +1011,33 @@ HTML_TEMPLATE = """
                 
                 // 安全获取推文数据
                 const userId = tweet.user_id || "未知用户";
+                const username = tweet.username || tweet.user_id || "未知用户";  // 优先使用推文中的username
                 const content = tweet.content || "无内容";
                 const publishedAt = tweet.published_at || "";
                 const url = tweet.url || "#";
+                const images = tweet.images || [];  // 获取图片数组
                 
                 // 格式化日期
                 const formattedDate = formatDate(publishedAt);
                 
-                // 查找用户信息
-                const userInfo = allUsers.find(u => u.user_id === userId);
-                const displayName = userInfo ? (userInfo.username || userId) : userId;
+                // 如果推文数据中没有username，才从用户列表中查找
+                let displayName = username;
+                if (username === userId && allUsers) {
+                    const userInfo = allUsers.find(u => u.user_id === userId);
+                    displayName = userInfo ? (userInfo.username || userId) : userId;
+                }
+                
+                // 构建图片HTML
+                let imagesHtml = '';
+                if (images && images.length > 0) {
+                    imagesHtml = '<div class="tweet-images">';
+                    images.forEach(imgUrl => {
+                        if (imgUrl) {
+                            imagesHtml += `<img src="${imgUrl}" alt="推文图片" class="tweet-image" loading="lazy" onerror="this.style.display='none'">`;
+                        }
+                    });
+                    imagesHtml += '</div>';
+                }
                 
                 tweetElement.innerHTML = `
                     <div class="tweet-header">
@@ -996,6 +1049,7 @@ HTML_TEMPLATE = """
                         </div>
                     </div>
                     <div class="tweet-content">${content}</div>
+                    ${imagesHtml}
                     <div class="tweet-footer">
                         <a href="${url}" target="_blank" class="tweet-time">${formattedDate}</a>
                     </div>
@@ -1357,20 +1411,36 @@ async def stream_tweets(
                                     value = str(value)
                             tweet_data[key] = value
                         
+                        # 处理images字段，将JSON字符串转换为数组
+                        if "images" in tweet_data and tweet_data["images"]:
+                            try:
+                                tweet_data["images"] = json.loads(tweet_data["images"])
+                            except (json.JSONDecodeError, TypeError) as e:
+                                logger.warning(f"解析images字段失败: {e}")
+                                tweet_data["images"] = []
+                        
                         # 添加用户信息
-                        if user_id in USER_INFO_CACHE:
-                            tweet_data["username"] = USER_INFO_CACHE[user_id].get("username", user_id)
-                            tweet_data["profile_image"] = USER_INFO_CACHE[user_id].get("profile_image", "")
-                            logger.debug(f"用户信息匹配: {user_id} -> {tweet_data['username']}")
+                        # 优先使用推文数据中的username字段，如果没有再从缓存中查找
+                        if "username" not in tweet_data or not tweet_data["username"]:
+                            if user_id in USER_INFO_CACHE:
+                                tweet_data["username"] = USER_INFO_CACHE[user_id].get("username", user_id)
+                                tweet_data["profile_image"] = USER_INFO_CACHE[user_id].get("profile_image", "")
+                                logger.debug(f"从缓存补充用户信息: {user_id} -> {tweet_data['username']}")
+                            else:
+                                logger.debug(f"未找到用户信息: {user_id}")
+                                # 尝试查找不区分大小写的匹配
+                                for cached_id, info in USER_INFO_CACHE.items():
+                                    if cached_id.lower() == user_id.lower():
+                                        tweet_data["username"] = info.get("username", user_id)
+                                        tweet_data["profile_image"] = info.get("profile_image", "")
+                                        logger.debug(f"从缓存模糊匹配用户信息: {user_id} -> {tweet_data['username']}")
+                                        break
+                                else:
+                                    # 如果都没有找到，使用user_id作为username
+                                    tweet_data["username"] = user_id
+                                    logger.debug(f"使用默认用户名: {user_id}")
                         else:
-                            logger.debug(f"未找到用户信息: {user_id}")
-                            # 尝试查找不区分大小写的匹配
-                            for cached_id, info in USER_INFO_CACHE.items():
-                                if cached_id.lower() == user_id.lower():
-                                    tweet_data["username"] = info.get("username", user_id)
-                                    tweet_data["profile_image"] = info.get("profile_image", "")
-                                    logger.debug(f"用户信息模糊匹配: {user_id} -> {tweet_data['username']}")
-                                    break
+                            logger.debug(f"使用推文数据中的用户名: {user_id} -> {tweet_data['username']}")
                         
                         # 记录更多信息，帮助调试
                         logger.debug(f"发送初始推文: {tweet_data}")
@@ -1440,20 +1510,36 @@ async def stream_tweets(
                                     value = str(value)
                             tweet_data[key] = value
                         
+                        # 处理images字段，将JSON字符串转换为数组
+                        if "images" in tweet_data and tweet_data["images"]:
+                            try:
+                                tweet_data["images"] = json.loads(tweet_data["images"])
+                            except (json.JSONDecodeError, TypeError) as e:
+                                logger.warning(f"解析images字段失败: {e}")
+                                tweet_data["images"] = []
+                        
                         # 添加用户信息
-                        if user_id in USER_INFO_CACHE:
-                            tweet_data["username"] = USER_INFO_CACHE[user_id].get("username", user_id)
-                            tweet_data["profile_image"] = USER_INFO_CACHE[user_id].get("profile_image", "")
-                            logger.debug(f"用户信息匹配: {user_id} -> {tweet_data['username']}")
+                        # 优先使用推文数据中的username字段，如果没有再从缓存中查找
+                        if "username" not in tweet_data or not tweet_data["username"]:
+                            if user_id in USER_INFO_CACHE:
+                                tweet_data["username"] = USER_INFO_CACHE[user_id].get("username", user_id)
+                                tweet_data["profile_image"] = USER_INFO_CACHE[user_id].get("profile_image", "")
+                                logger.debug(f"从缓存补充用户信息: {user_id} -> {tweet_data['username']}")
+                            else:
+                                logger.debug(f"未找到用户信息: {user_id}")
+                                # 尝试查找不区分大小写的匹配
+                                for cached_id, info in USER_INFO_CACHE.items():
+                                    if cached_id.lower() == user_id.lower():
+                                        tweet_data["username"] = info.get("username", user_id)
+                                        tweet_data["profile_image"] = info.get("profile_image", "")
+                                        logger.debug(f"从缓存模糊匹配用户信息: {user_id} -> {tweet_data['username']}")
+                                        break
+                                else:
+                                    # 如果都没有找到，使用user_id作为username
+                                    tweet_data["username"] = user_id
+                                    logger.debug(f"使用默认用户名: {user_id}")
                         else:
-                            logger.debug(f"未找到用户信息: {user_id}")
-                            # 尝试查找不区分大小写的匹配
-                            for cached_id, info in USER_INFO_CACHE.items():
-                                if cached_id.lower() == user_id.lower():
-                                    tweet_data["username"] = info.get("username", user_id)
-                                    tweet_data["profile_image"] = info.get("profile_image", "")
-                                    logger.debug(f"用户信息模糊匹配: {user_id} -> {tweet_data['username']}")
-                                    break
+                            logger.debug(f"使用推文数据中的用户名: {user_id} -> {tweet_data['username']}")
                         
                         # 记录更多信息，帮助调试
                         logger.debug(f"发送推文: {tweet_data}")

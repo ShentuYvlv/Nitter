@@ -7,7 +7,13 @@ services:
     environment:
       - ENABLE_RATELIMIT=false
       - TOR_PROXY_ENABLED=true
-      - REQ_LIMIT=1000
+      - REQ_LIMIT=100000
+      - REQ_PER_MIN=2000
+      - ENABLE_DEBUG=false
+      - HTTP_MAX_CONNECTIONS=500
+      - REDIS_CONNECTIONS=50
+      - REDIS_MAX_CONNECTIONS=100
+      - RSS_MINUTES=5
     volumes:
       - ./nitter.conf:/src/nitter.conf:ro
       - ./sessions.jsonl:/src/sessions.jsonl:ro
@@ -15,14 +21,31 @@ services:
     depends_on:
       - nitter-redis
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/settings"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   nitter-redis:
     image: redis:alpine
     container_name: nitter-redis
-    command: redis-server --save 60 1 --loglevel warning
+    command: redis-server --save 60 1 --loglevel warning --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - nitter-redis:/data
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
 
 volumes:
   nitter-redis:

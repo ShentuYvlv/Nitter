@@ -12,6 +12,7 @@ import os
 import argparse
 import sys
 from pathlib import Path
+import re
 
 # 在Windows上设置正确的事件循环策略
 if sys.platform == 'win32':
@@ -46,11 +47,13 @@ DEFAULT_STATE = {
 }
 
 # 轮询配置
-POLL_INTERVAL = 30          # 统一轮询间隔（秒）
-CONCURRENT_USERS = 1       # 并发轮询用户数
-REQUEST_TIMEOUT = 15        # 请求超时时间（秒）
-MAX_RETRIES = 3             # 最大重试次数
-RETRY_DELAYS = [1, 3, 5]    # 重试延迟（秒）
+POLL_INTERVAL = 15          # 统一轮询间隔（秒）- 从30秒减少到15秒
+CONCURRENT_USERS = 8        # 并发轮询用户数 - 平衡性能和稳定性
+REQUEST_TIMEOUT = 5         # 请求超时时间（秒）- 从15秒减少到5秒
+MAX_RETRIES = 2             # 最大重试次数 - 从3次减少到2次
+RETRY_DELAYS = [0.5, 1.0]   # 重试延迟（秒）- 大幅减少延迟
+RATE_LIMIT_DELAY = 2.0      # 遇到429错误时的额外延迟
+BATCH_DELAY = 0.3           # 批次间基础延迟
 
 class StateManager:
     """状态管理器 - 使用JSON文件存储所有状态"""
@@ -113,6 +116,12 @@ class SimplifiedPollingEngine:
         self.following_file = following_file
         self.state_manager = StateManager()
         
+        # 动态并发控制
+        self.current_concurrent = CONCURRENT_USERS
+        self.recent_errors = []  # 记录最近的错误
+        self.max_concurrent = 5  # 最大并发数
+        self.min_concurrent = 1  # 最小并发数
+        
         # 连接Redis - 仅用于推文流
         try:
             self.redis_client = redis.Redis(
@@ -159,6 +168,8 @@ class SimplifiedPollingEngine:
         
     async def fetch_user_tweets(self, session: aiohttp.ClientSession, user_id: str) -> bool:
         """获取用户推文"""
+        start_time = time.time()
+        
         for attempt in range(MAX_RETRIES):
             try:
                 instance = self.get_best_instance()
@@ -170,54 +181,80 @@ class SimplifiedPollingEngine:
                 if user_state.get("etag"):
                     headers["If-None-Match"] = user_state["etag"]
                 
-                logger.debug(f"请求用户 {user_id} 的RSS: {url}")
+                logger.info(f"开始请求用户 {user_id} 的RSS: {url}")
+                request_start = time.time()
                 
                 async with session.get(url, headers=headers, timeout=REQUEST_TIMEOUT) as response:
+                    request_duration = time.time() - request_start
+                    logger.info(f"用户 {user_id} HTTP请求耗时: {request_duration:.2f}秒, 状态码: {response.status}")
+                    
                     # 更新实例权重
-                    if response.status == 200:
-                        self.state_manager.update_instance_state(instance, consecutive_failures=0)
+                if response.status == 200:
+                    self.state_manager.update_instance_state(instance, consecutive_failures=0)
                         
                         # 保存ETag
-                        if "ETag" in response.headers:
-                            self.state_manager.update_user_state(user_id, etag=response.headers["ETag"])
-                        
+                    if "ETag" in response.headers:
+                        self.state_manager.update_user_state(user_id, etag=response.headers["ETag"])
+                    
                         # 处理RSS内容
+                        content_start = time.time()
                         content = await response.text()
-                        return await self.process_rss_content(user_id, content)
+                        content_read_duration = time.time() - content_start
+                        logger.info(f"用户 {user_id} 内容读取耗时: {content_read_duration:.2f}秒")
+                        
+                        process_start = time.time()
+                        result = await self.process_rss_content(user_id, content)
+                        process_duration = time.time() - process_start
+                        total_duration = time.time() - start_time
+                        
+                        logger.info(f"用户 {user_id} RSS处理耗时: {process_duration:.2f}秒, 总耗时: {total_duration:.2f}秒")
+                        return result
                         
                     elif response.status == 304:
                         # 内容未更新
-                        logger.debug(f"用户 {user_id} 内容未更新")
+                        total_duration = time.time() - start_time
+                        logger.info(f"用户 {user_id} 内容未更新 (304), 总耗时: {total_duration:.2f}秒")
                         return False
                         
                     elif response.status == 429:
                         # 请求过多，降低实例权重
-                        logger.warning(f"实例 {instance} 请求过多 (429)")
+                        logger.warning(f"实例 {instance} 请求过多 (429) - 用户 {user_id}")
                         current_weight = self.state_manager.state["instances"].get(instance, {}).get("weight", 10.0)
                         self.state_manager.update_instance_state(
                             instance, 
-                            weight=max(1.0, current_weight * 0.5),
+                            weight=max(1.0, current_weight * 0.3),  # 更激进地降低权重
                             consecutive_failures=self.state_manager.state["instances"].get(instance, {}).get("consecutive_failures", 0) + 1
                         )
                         
+                        # 遇到429错误时，增加额外延迟
+                        rate_limit_delay = RATE_LIMIT_DELAY * (attempt + 1)
+                        logger.warning(f"遇到速率限制，将延迟 {rate_limit_delay:.1f} 秒")
+                        await asyncio.sleep(rate_limit_delay)
+                        
                         if attempt < MAX_RETRIES - 1:
+                            logger.info(f"用户 {user_id} 将在 {RETRY_DELAYS[attempt]} 秒后重试")
                             await asyncio.sleep(RETRY_DELAYS[attempt])
                             continue
                         else:
-                            logger.error(f"用户 {user_id} 最终失败: HTTP 429")
+                            total_duration = time.time() - start_time
+                            logger.error(f"用户 {user_id} 最终失败: HTTP 429, 总耗时: {total_duration:.2f}秒")
                             return False
                             
                     else:
                         logger.warning(f"用户 {user_id} 请求失败: HTTP {response.status}")
                         if attempt < MAX_RETRIES - 1:
+                            logger.info(f"用户 {user_id} 将在 {RETRY_DELAYS[attempt]} 秒后重试")
                             await asyncio.sleep(RETRY_DELAYS[attempt])
                             continue
                         else:
+                            total_duration = time.time() - start_time
+                            logger.warning(f"用户 {user_id} 最终失败: HTTP {response.status}, 总耗时: {total_duration:.2f}秒")
                             return False
                             
             except (aiohttp.ClientError, asyncio.TimeoutError) as e:
                 logger.warning(f"用户 {user_id} 请求异常 (尝试 {attempt + 1}/{MAX_RETRIES}): {e}")
                 if attempt < MAX_RETRIES - 1:
+                    logger.info(f"用户 {user_id} 将在 {RETRY_DELAYS[attempt]} 秒后重试")
                     await asyncio.sleep(RETRY_DELAYS[attempt])
                 else:
                     # 降低实例权重
@@ -228,6 +265,8 @@ class SimplifiedPollingEngine:
                         weight=max(1.0, current_weight * 0.8),
                         consecutive_failures=self.state_manager.state["instances"].get(instance, {}).get("consecutive_failures", 0) + 1
                     )
+                    total_duration = time.time() - start_time
+                    logger.error(f"用户 {user_id} 网络异常失败, 总耗时: {total_duration:.2f}秒")
                     return False
         
         return False
@@ -241,12 +280,92 @@ class SimplifiedPollingEngine:
             if not items:
                 return False
                 
+            # 尝试从RSS中提取用户名
+            username = user_id  # 默认使用user_id
+            
+            # 方法1: 从channel title中提取用户名 (格式通常是 "/ Twitter")
+            channel_title = root.find(".//channel/title")
+            if channel_title is not None and channel_title.text:
+                title_text = channel_title.text
+                # 处理不同的标题格式
+                if "/ Twitter" in title_text:
+                    username = title_text.replace("/ Twitter", "").strip()
+                elif "/ Nitter" in title_text:
+                    username = title_text.replace("/ Nitter", "").strip()
+                elif " / @" in title_text:
+                    # 处理 'Aster / @Aster_DEX' 这种格式，只取"/"前面的部分
+                    username = title_text.split(" / @")[0].strip()
+                elif " /" in title_text:
+                    # 处理其他包含"/"的格式，取"/"前面的部分
+                    username = title_text.split(" /")[0].strip()
+                else:
+                    # 如果没有特殊格式，直接使用标题
+                    username = title_text.strip()
+                
+                logger.debug(f"从RSS channel title提取用户名: {user_id} -> {username} (原标题: {title_text})")
+                
+            # 方法2: 从第一个推文的作者信息中提取 (备选方案)
+            if username == user_id:
+                latest_item = items[0]
+                # 尝试从creator或author字段获取
+                creator = latest_item.find(".//{http://purl.org/dc/elements/1.1/}creator")
+                if creator is not None and creator.text:
+                    username = creator.text.strip()
+                    logger.debug(f"从RSS creator字段提取用户名: {user_id} -> {username}")
+                
+                # 如果还是没有，尝试从推文标题中提取 (通常格式是 "RT by username: content")
+                if username == user_id:
+                    title = latest_item.find("title")
+                    if title is not None and title.text:
+                        title_text = title.text
+                        if "RT by " in title_text and ":" in title_text:
+                            # 提取 "RT by username:" 中的用户名
+                            parts = title_text.split("RT by ")[1].split(":")[0]
+                            username = parts.strip()
+                            logger.debug(f"从推文标题提取用户名: {user_id} -> {username}")
+                
             # 获取最新推文
             latest_item = items[0]
             link = latest_item.find("link")
             title = latest_item.find("title")
             description = latest_item.find("description")
             pub_date = latest_item.find("pubDate")
+            
+            # 提取图片URL
+            images = []
+            
+            # 方法1: 从enclosure元素中提取图片
+            enclosures = latest_item.findall("enclosure")
+            for enclosure in enclosures:
+                if enclosure.get("type", "").startswith("image/"):
+                    images.append(enclosure.get("url", ""))
+            
+            # 方法2: 从description的HTML内容中提取图片
+            if description is not None and description.text:
+                # 匹配img标签中的src属性
+                img_pattern = r'<img[^>]+src=["\']([^"\']+)["\'][^>]*>'
+                img_matches = re.findall(img_pattern, description.text, re.IGNORECASE)
+                images.extend(img_matches)
+                
+                # 匹配其他可能的图片URL模式
+                url_pattern = r'https?://[^\s<>"]+\.(?:jpg|jpeg|png|gif|webp)(?:\?[^\s<>"]*)?'
+                url_matches = re.findall(url_pattern, description.text, re.IGNORECASE)
+                images.extend(url_matches)
+            
+            # 去重并过滤有效的图片URL，同时修复端口号问题
+            unique_images = []
+            for img_url in images:
+                if img_url and img_url not in unique_images:
+                    # 过滤掉一些无效的URL
+                    if not img_url.startswith('data:') and len(img_url) > 10:
+                        # 修复端口号问题：如果URL是localhost但没有端口，添加8080端口
+                        if img_url.startswith('http://localhost/') and ':8080' not in img_url:
+                            img_url = img_url.replace('http://localhost/', 'http://localhost:8080/')
+                            logger.debug(f"修复图片URL端口: {img_url}")
+                        unique_images.append(img_url)
+            
+            if unique_images:
+                logger.debug(f"用户 {user_id} 推文包含 {len(unique_images)} 张图片: {unique_images[:2]}...")  # 只显示前2个URL
             
             # 修复检查逻辑 - 检查元素是否存在且有文本内容
             if link is None or not link.text:
@@ -270,8 +389,8 @@ class SimplifiedPollingEngine:
             
             # 检查是否为新推文
             if user_state.get("last_tweet_id") == tweet_id:
-                return False
-                
+                            return False
+                        
             # 解析发布时间
             try:
                 pub_time = self.parse_date(pub_date.text)
@@ -288,35 +407,38 @@ class SimplifiedPollingEngine:
                 pub_time = datetime.now()
             
             # 构建推文数据
-            tweet_data = {
+                tweet_data = {
                 "id": tweet_id,
-                "user_id": user_id,
+                            "user_id": user_id,
+                "username": username,
                 "content": title.text or "",
                 "html": description.text or "",
                 "published_at": pub_date.text,
                 "url": link.text,
-                "timestamp": pub_time.isoformat()
+                "timestamp": pub_time.isoformat(),
+                "images": json.dumps(unique_images)
             }
-            
-            # 添加到Redis流
+                        
+                        # 添加到Redis流
             try:
-                stream_id = self.redis_client.xadd(
-                    TWEET_STREAM_KEY,
-                    tweet_data,
+                    stream_id = self.redis_client.xadd(
+                                TWEET_STREAM_KEY,
+                                tweet_data,
                     maxlen=1000,  # 限制流长度
-                    approximate=True
-                )
+                                approximate=True
+                            )
                 
-                # 更新用户状态
-                self.state_manager.update_user_state(
-                    user_id,
-                    last_tweet_id=tweet_id,
-                    last_success_time=time.time(),
-                    initialized=True
-                )
-                
-                logger.info(f"用户 {user_id} 新推文已推送: {tweet_id}")
-                return True
+                    # 更新用户状态
+                    self.state_manager.update_user_state(
+                        user_id,
+                        last_tweet_id=tweet_id,
+                        last_success_time=time.time(),
+                        initialized=True,
+                        username=username  # 保存用户名到状态
+                    )
+                    
+                    logger.info(f"用户 {username}(@{user_id}) 新推文已推送: {tweet_id}")
+                    return True
                 
             except Exception as e:
                 logger.error(f"推文添加到Redis失败: {e}")
@@ -363,15 +485,47 @@ class SimplifiedPollingEngine:
         
         logger.info(f"初始化完成，共 {len(self.state_manager.get_all_users())} 个用户")
     
+    def adjust_concurrency(self, success_count: int, total_count: int, error_count: int):
+        """根据成功率动态调整并发数"""
+        if total_count == 0:
+            return
+            
+        success_rate = success_count / total_count
+        error_rate = error_count / total_count
+        
+        # 记录最近的错误率
+        self.recent_errors.append(error_rate)
+        if len(self.recent_errors) > 5:  # 只保留最近5次的记录
+            self.recent_errors.pop(0)
+        
+        avg_error_rate = sum(self.recent_errors) / len(self.recent_errors)
+        
+        old_concurrent = self.current_concurrent
+        
+        if avg_error_rate > 0.3:  # 错误率超过30%，减少并发
+            self.current_concurrent = max(self.min_concurrent, self.current_concurrent - 1)
+            logger.info(f"错误率过高 ({avg_error_rate:.1%})，降低并发数: {old_concurrent} -> {self.current_concurrent}")
+        elif avg_error_rate < 0.1 and success_rate > 0.8:  # 错误率低于10%且成功率高，增加并发
+            self.current_concurrent = min(self.max_concurrent, self.current_concurrent + 1)
+            logger.info(f"性能良好 (错误率: {avg_error_rate:.1%})，提高并发数: {old_concurrent} -> {self.current_concurrent}")
+        
     async def poll_users_batch(self, user_batch: List[str]):
         """批量轮询用户"""
+        batch_start = time.time()
+        logger.info(f"开始处理批次: {len(user_batch)} 个用户 - {user_batch}")
+        
         async with aiohttp.ClientSession() as session:
             tasks = [self.fetch_user_tweets(session, user_id) for user_id in user_batch]
             results = await asyncio.gather(*tasks, return_exceptions=True)
             
             success_count = sum(1 for r in results if r is True)
-            if success_count > 0:
-                logger.info(f"批次完成: {len(user_batch)} 用户, {success_count} 个有新推文")
+            error_count = sum(1 for r in results if isinstance(r, Exception))
+            batch_duration = time.time() - batch_start
+            
+            logger.info(f"批次完成: {len(user_batch)} 用户, {success_count} 个有新推文, {error_count} 个异常, 耗时: {batch_duration:.2f}秒")
+            
+            # 动态调整并发数
+            self.adjust_concurrency(success_count, len(user_batch), error_count)
     
     async def run(self):
         """运行轮询引擎"""
@@ -383,28 +537,43 @@ class SimplifiedPollingEngine:
         # 发送测试推文
         await self.send_test_tweet()
         
+        cycle_count = 0
         while True:
             try:
+                cycle_count += 1
+                cycle_start = time.time()
+                logger.info(f"开始第 {cycle_count} 轮轮询...")
+                
                 users = self.state_manager.get_all_users()
                 if not users:
                     logger.warning("没有用户需要轮询")
                     await asyncio.sleep(POLL_INTERVAL)
                     continue
                 
+                logger.info(f"本轮将处理 {len(users)} 个用户，并发数: {self.current_concurrent}")
+                
                 # 分批处理用户
-                for i in range(0, len(users), CONCURRENT_USERS):
-                    batch = users[i:i + CONCURRENT_USERS]
+                batch_count = 0
+                for i in range(0, len(users), self.current_concurrent):
+                    batch_count += 1
+                    batch = users[i:i + self.current_concurrent]
+                    logger.info(f"处理第 {batch_count} 批用户...")
                     await self.poll_users_batch(batch)
                     
                     # 批次间短暂延迟
-                    if i + CONCURRENT_USERS < len(users):
-                        await asyncio.sleep(1)
+                    if i + self.current_concurrent < len(users):
+                        await asyncio.sleep(BATCH_DELAY)  # 减少批次间延迟从1秒到0.3秒
                 
                 # 保存状态
+                save_start = time.time()
                 self.state_manager.save_state()
+                save_duration = time.time() - save_start
+                
+                cycle_duration = time.time() - cycle_start
+                logger.info(f"第 {cycle_count} 轮轮询完成! 总耗时: {cycle_duration:.2f}秒, 状态保存耗时: {save_duration:.2f}秒")
                 
                 # 等待下一轮
-                logger.debug(f"轮询完成，等待 {POLL_INTERVAL} 秒")
+                logger.info(f"等待 {POLL_INTERVAL} 秒后开始下一轮...")
                 await asyncio.sleep(POLL_INTERVAL)
                 
             except Exception as e:
@@ -417,11 +586,13 @@ class SimplifiedPollingEngine:
             test_tweet = {
                 "id": f"test_{int(time.time())}",
                 "user_id": "system",
+                "username": "系统测试",
                 "content": f"系统测试推文 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
                 "html": "<p>系统测试推文</p>",
                 "published_at": datetime.now().strftime("%a, %d %b %Y %H:%M:%S"),
                 "url": "#",
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
+                "images": json.dumps([])
             }
             
             self.redis_client.xadd(TWEET_STREAM_KEY, test_tweet)
