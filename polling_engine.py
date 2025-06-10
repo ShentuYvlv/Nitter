@@ -50,7 +50,7 @@ DEFAULT_STATE = {
 
 # 轮询配置
 POLL_INTERVAL = 15          # 统一轮询间隔（秒）
-CONCURRENT_USERS = 10        # 每个实例并发数 - 降低到3避免429错误
+CONCURRENT_USERS = 5        # 每个实例并发数 - 降低到3避免429错误
 REQUEST_TIMEOUT = 5         # 请求超时时间（秒）
 MAX_RETRIES = 2             # 最大重试次数
 RETRY_DELAYS = [0.5, 1.0]   # 重试延迟（秒）
@@ -664,39 +664,72 @@ class EnhancedPollingEngine:
             
             # 提取图片URL
             images = []
-            
+
             # 方法1: 从enclosure元素中提取图片
             enclosures = latest_item.findall("enclosure")
             for enclosure in enclosures:
                 if enclosure.get("type", "").startswith("image/"):
-                    images.append(enclosure.get("url", ""))
-            
+                    url = enclosure.get("url", "")
+                    if url:
+                        images.append(url)
+
             # 方法2: 从description的HTML内容中提取图片
             if description is not None and description.text:
                 # 匹配img标签中的src属性
                 img_pattern = r'<img[^>]+src=["\']([^"\']+)["\'][^>]*>'
                 img_matches = re.findall(img_pattern, description.text, re.IGNORECASE)
                 images.extend(img_matches)
-                
-                # 匹配其他可能的图片URL模式
-                url_pattern = r'https?://[^\s<>"]+\.(?:jpg|jpeg|png|gif|webp)(?:\?[^\s<>"]*)?'
-                url_matches = re.findall(url_pattern, description.text, re.IGNORECASE)
-                images.extend(url_matches)
-            
-            # 去重并过滤有效的图片URL，同时修复端口号问题
+
+                # 注意：不再使用通用URL模式匹配，因为它会重复提取已经从img标签提取的图片
+                # 只有在没有从img标签找到图片时，才使用URL模式匹配作为备用方案
+                if not img_matches:
+                    url_pattern = r'https?://[^\s<>"]+\.(?:jpg|jpeg|png|gif|webp)(?:\?[^\s<>"]*)?'
+                    url_matches = re.findall(url_pattern, description.text, re.IGNORECASE)
+                    images.extend(url_matches)
+
+            # 标准化和去重图片URL
+            def normalize_image_url(url):
+                """标准化图片URL，用于去重"""
+                if not url:
+                    return ""
+
+                # 修复端口号问题：如果URL是localhost但没有端口，添加8080端口
+                if url.startswith('http://localhost/') and ':8080' not in url:
+                    url = url.replace('http://localhost/', 'http://localhost:8080/')
+
+                # 移除URL中的查询参数进行去重比较（但保留原始URL）
+                from urllib.parse import urlparse
+                parsed = urlparse(url)
+                normalized = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+                return normalized
+
+            # 去重并过滤有效的图片URL
             unique_images = []
+            seen_normalized = set()
+
             for img_url in images:
-                if img_url and img_url not in unique_images:
-                    # 过滤掉一些无效的URL
-                    if not img_url.startswith('data:') and len(img_url) > 10:
-                        # 修复端口号问题：如果URL是localhost但没有端口，添加8080端口
-                        if img_url.startswith('http://localhost/') and ':8080' not in img_url:
-                            img_url = img_url.replace('http://localhost/', 'http://localhost:8080/')
-                            logger.debug(f"修复图片URL端口: {img_url}")
-                        unique_images.append(img_url)
+                if not img_url or img_url.startswith('data:') or len(img_url) <= 10:
+                    continue
+
+                # 修复端口号问题
+                if img_url.startswith('http://localhost/') and ':8080' not in img_url:
+                    img_url = img_url.replace('http://localhost/', 'http://localhost:8080/')
+                    logger.debug(f"修复图片URL端口: {img_url}")
+
+                # 使用标准化URL进行去重
+                normalized = normalize_image_url(img_url)
+                if normalized not in seen_normalized:
+                    seen_normalized.add(normalized)
+                    unique_images.append(img_url)
             
             if unique_images:
                 logger.debug(f"用户 {user_id} 推文包含 {len(unique_images)} 张图片: {unique_images[:2]}...")  # 只显示前2个URL
+                # 添加详细的图片提取调试信息
+                logger.debug(f"原始图片列表长度: {len(images)}, 去重后: {len(unique_images)}")
+                if len(images) != len(unique_images):
+                    logger.debug(f"检测到重复图片，原始: {images}, 去重后: {unique_images}")
+            else:
+                logger.debug(f"用户 {user_id} 推文不包含图片")
             
             # 修复检查逻辑 - 检查元素是否存在且有文本内容
             if link is None or not link.text:

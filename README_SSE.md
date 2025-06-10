@@ -1,4 +1,12 @@
-# 推特实时推送系统 (SSE版本)
+如何启动
+   1 cd nitter\config  docker-compose -f .\docker-compose-multi.yml up -d 
+
+   2 启动三个实例：python polling_engine.py --nitter-instances "http://localhost:8080,http://localhost:8081,http://localhost:8082"
+
+   3 启动SSE:python  sse_server.py
+
+
+
 
 这是一个高效的推特实时推送系统，使用Server-Sent Events (SSE)技术向客户端推送最新推文。系统由两个主要组件组成：轮询引擎和SSE服务器，通过Redis进行数据传输。
 

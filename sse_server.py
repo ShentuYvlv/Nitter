@@ -584,7 +584,7 @@ HTML_TEMPLATE = """
         let paused = false;
         let tweets = [];
         const MAX_TWEETS = 100;
-        let debugMode = false;
+        let debugMode = true;  // 启用调试模式
         let pollingConfig = {};
         
         // 获取DOM元素
@@ -1015,7 +1015,31 @@ HTML_TEMPLATE = """
                 const content = tweet.content || "无内容";
                 const publishedAt = tweet.published_at || "";
                 const url = tweet.url || "#";
-                const images = tweet.images || [];  // 获取图片数组
+
+                // 详细调试图片数据
+                logDebug(`原始推文数据: ${JSON.stringify(tweet)}`);
+                logDebug(`tweet.images 类型: ${typeof tweet.images}, 值: ${JSON.stringify(tweet.images)}`);
+
+                let images = [];
+                if (tweet.images) {
+                    if (typeof tweet.images === 'string') {
+                        try {
+                            images = JSON.parse(tweet.images);
+                            logDebug(`从字符串解析图片: ${JSON.stringify(images)}`);
+                        } catch (e) {
+                            logDebug(`解析图片字符串失败: ${e}, 原始值: ${tweet.images}`);
+                            images = [];
+                        }
+                    } else if (Array.isArray(tweet.images)) {
+                        images = tweet.images;
+                        logDebug(`直接使用图片数组: ${JSON.stringify(images)}`);
+                    } else {
+                        logDebug(`未知的图片数据类型: ${typeof tweet.images}, 值: ${tweet.images}`);
+                        images = [];
+                    }
+                } else {
+                    logDebug('推文不包含图片数据');
+                }
                 
                 // 格式化日期
                 const formattedDate = formatDate(publishedAt);
@@ -1030,13 +1054,19 @@ HTML_TEMPLATE = """
                 // 构建图片HTML
                 let imagesHtml = '';
                 if (images && images.length > 0) {
+                    logDebug(`推文包含 ${images.length} 张图片: ${JSON.stringify(images)}`);
                     imagesHtml = '<div class="tweet-images">';
-                    images.forEach(imgUrl => {
+                    images.forEach((imgUrl, index) => {
                         if (imgUrl) {
-                            imagesHtml += `<img src="${imgUrl}" alt="推文图片" class="tweet-image" loading="lazy" onerror="this.style.display='none'">`;
+                            logDebug(`添加图片 ${index + 1}: ${imgUrl}`);
+                            imagesHtml += `<img src="${imgUrl}" alt="推文图片" class="tweet-image" loading="lazy"
+                                onerror="console.error('图片加载失败:', this.src); this.style.display='none';"
+                                onload="console.log('图片加载成功:', this.src);">`;
                         }
                     });
                     imagesHtml += '</div>';
+                } else {
+                    logDebug('推文不包含图片或图片数组为空');
                 }
                 
                 tweetElement.innerHTML = `
@@ -1414,10 +1444,14 @@ async def stream_tweets(
                         # 处理images字段，将JSON字符串转换为数组
                         if "images" in tweet_data and tweet_data["images"]:
                             try:
+                                original_images = tweet_data["images"]
                                 tweet_data["images"] = json.loads(tweet_data["images"])
+                                logger.debug(f"解析图片字段成功: 原始={original_images}, 解析后={tweet_data['images']}")
                             except (json.JSONDecodeError, TypeError) as e:
-                                logger.warning(f"解析images字段失败: {e}")
+                                logger.warning(f"解析images字段失败: {e}, 原始数据: {tweet_data['images']}")
                                 tweet_data["images"] = []
+                        else:
+                            tweet_data["images"] = []
                         
                         # 添加用户信息
                         # 优先使用推文数据中的username字段，如果没有再从缓存中查找
@@ -1513,10 +1547,14 @@ async def stream_tweets(
                         # 处理images字段，将JSON字符串转换为数组
                         if "images" in tweet_data and tweet_data["images"]:
                             try:
+                                original_images = tweet_data["images"]
                                 tweet_data["images"] = json.loads(tweet_data["images"])
+                                logger.debug(f"解析图片字段成功: 原始={original_images}, 解析后={tweet_data['images']}")
                             except (json.JSONDecodeError, TypeError) as e:
-                                logger.warning(f"解析images字段失败: {e}")
+                                logger.warning(f"解析images字段失败: {e}, 原始数据: {tweet_data['images']}")
                                 tweet_data["images"] = []
+                        else:
+                            tweet_data["images"] = []
                         
                         # 添加用户信息
                         # 优先使用推文数据中的username字段，如果没有再从缓存中查找

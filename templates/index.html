@@ -861,113 +861,106 @@
                 const displayName = tweet.username || userId;
                 const profileImage = tweet.profile_image || "";
                 
-                // 提取图片
+                // 提取图片 - 优先使用 tweet.images 字段
                 let imagesHtml = '';
-                if (html) {
+                let imageUrls = [];
+
+                // 首先检查 tweet.images 字段
+                logDebug(`tweet.images 类型: ${typeof tweet.images}, 值: ${JSON.stringify(tweet.images)}`);
+
+                if (tweet.images) {
+                    if (typeof tweet.images === 'string') {
+                        try {
+                            imageUrls = JSON.parse(tweet.images);
+                            logDebug(`从字符串解析图片: ${JSON.stringify(imageUrls)}`);
+                        } catch (e) {
+                            logDebug(`解析图片字符串失败: ${e}, 原始值: ${tweet.images}`);
+                            imageUrls = [];
+                        }
+                    } else if (Array.isArray(tweet.images)) {
+                        imageUrls = tweet.images;
+                        logDebug(`直接使用图片数组: ${JSON.stringify(imageUrls)}`);
+                    }
+                }
+
+                // 如果没有从 tweet.images 获取到图片，再从HTML中提取
+                if (imageUrls.length === 0 && html) {
                     // 创建一个临时元素来解析HTML
                     const tempDiv = document.createElement('div');
                     tempDiv.innerHTML = html;
-                    
+
                     // 记录调试信息
                     logDebug(`解析HTML内容: ${html.substring(0, 200)}...`);
-                    
+
                     // 查找所有图片
                     const images = tempDiv.querySelectorAll('img');
-                    logDebug(`找到 ${images.length} 张图片`);
+                    logDebug(`从HTML找到 ${images.length} 张图片`);
                     
                     if (images.length > 0) {
-                        imagesHtml = '<div class="tweet-images">';
                         images.forEach(img => {
                             const imgSrc = img.getAttribute('src');
-                            logDebug(`图片URL: ${imgSrc}`);
-                            
+                            logDebug(`从HTML提取图片URL: ${imgSrc}`);
+
                             // 过滤掉头像图片和空URL
-                            if (imgSrc && 
-                                !imgSrc.includes('profile_images') && 
+                            if (imgSrc &&
+                                !imgSrc.includes('profile_images') &&
                                 !imgSrc.includes('_mini.') &&
                                 !imgSrc.includes('_normal.')) {
-                                
-                                // 修复相对URL
-                                let fixedSrc = imgSrc;
-                                if (imgSrc.startsWith('/')) {
-                                    // 如果是相对路径，转换为绝对路径
-                                    try {
-                                        // 尝试从推文URL中获取基础URL
-                                        let baseUrl = '';
-                                        if (url && url !== '#') {
-                                            const urlObj = new URL(url);
-                                            baseUrl = urlObj.origin;
-                                        } else {
-                                            // 如果没有有效的推文URL，使用当前页面的基础URL
-                                            baseUrl = window.location.origin;
-                                        }
-                                        fixedSrc = `${baseUrl}${imgSrc}`;
-                                        logDebug(`修复相对URL: ${imgSrc} -> ${fixedSrc}`);
-                                    } catch (e) {
-                                        logDebug(`处理URL时出错: ${e.message}`);
-                                        // 回退到使用当前页面的基础URL
-                                        fixedSrc = `${window.location.origin}${imgSrc}`;
-                                    }
-                                }
-                                
-                                imagesHtml += `<div class="tweet-image"><img src="${fixedSrc}" alt="" loading="lazy"></div>`;
+                                imageUrls.push(imgSrc);
                             }
                         });
-                        imagesHtml += '</div>';
-                    }
-                    
-                    // 如果没有找到图片，尝试从HTML中提取图片URL
-                    if (images.length === 0) {
-                        // 尝试查找图片链接
-                        const imgRegex = /<img[^>]+src="([^">]+)"/g;
-                        let match;
-                        const imgUrls = [];
-                        
-                        while ((match = imgRegex.exec(html)) !== null) {
-                            imgUrls.push(match[1]);
-                        }
-                        
-                        if (imgUrls.length > 0) {
-                            logDebug(`通过正则表达式找到 ${imgUrls.length} 张图片`);
-                            imagesHtml = '<div class="tweet-images">';
-                            
-                            imgUrls.forEach(imgSrc => {
-                                if (imgSrc && 
-                                    !imgSrc.includes('profile_images') && 
-                                    !imgSrc.includes('_mini.') &&
-                                    !imgSrc.includes('_normal.')) {
-                                    
-                                    // 修复相对URL
-                                    let fixedSrc = imgSrc;
-                                    if (imgSrc.startsWith('/')) {
-                                        // 如果是相对路径，转换为绝对路径
-                                        try {
-                                            // 尝试从推文URL中获取基础URL
-                                            let baseUrl = '';
-                                            if (url && url !== '#') {
-                                                const urlObj = new URL(url);
-                                                baseUrl = urlObj.origin;
-                                            } else {
-                                                // 如果没有有效的推文URL，使用当前页面的基础URL
-                                                baseUrl = window.location.origin;
-                                            }
-                                            fixedSrc = `${baseUrl}${imgSrc}`;
-                                        } catch (e) {
-                                            logDebug(`处理URL时出错: ${e.message}`);
-                                            // 回退到使用当前页面的基础URL
-                                            fixedSrc = `${window.location.origin}${imgSrc}`;
-                                        }
-                                    }
-                                    
-                                    imagesHtml += `<div class="tweet-image"><img src="${fixedSrc}" alt="" loading="lazy"></div>`;
-                                }
-                            });
-                            
-                            imagesHtml += '</div>';
-                        }
                     }
                 }
-                
+
+                // 处理图片URL数组
+                if (imageUrls.length > 0) {
+                    logDebug(`总共找到 ${imageUrls.length} 张图片: ${JSON.stringify(imageUrls)}`);
+                    imagesHtml = '<div class="tweet-images">';
+
+                    imageUrls.forEach((imgSrc, index) => {
+                        if (imgSrc) {
+                            logDebug(`处理图片 ${index + 1}: ${imgSrc}`);
+
+                            // 修复图片URL
+                            let fixedSrc = imgSrc;
+
+                            // 修复端口号问题
+                            if (imgSrc.startsWith('http://localhost/') && !imgSrc.includes(':8080')) {
+                                fixedSrc = imgSrc.replace('http://localhost/', 'http://localhost:8080/');
+                                logDebug(`修复端口号: ${imgSrc} -> ${fixedSrc}`);
+                            }
+
+                            // 处理相对URL
+                            if (imgSrc.startsWith('/')) {
+                                try {
+                                    let baseUrl = '';
+                                    if (url && url !== '#') {
+                                        const urlObj = new URL(url);
+                                        baseUrl = urlObj.origin;
+                                    } else {
+                                        baseUrl = window.location.origin;
+                                    }
+                                    fixedSrc = `${baseUrl}${imgSrc}`;
+                                    logDebug(`修复相对URL: ${imgSrc} -> ${fixedSrc}`);
+                                } catch (e) {
+                                    logDebug(`处理URL时出错: ${e.message}`);
+                                    fixedSrc = `${window.location.origin}${imgSrc}`;
+                                }
+                            }
+
+                            imagesHtml += `<div class="tweet-image">
+                                <img src="${fixedSrc}" alt="推文图片" loading="lazy"
+                                     onerror="console.error('图片加载失败:', this.src); this.style.display='none';"
+                                     onload="console.log('图片加载成功:', this.src);">
+                            </div>`;
+                        }
+                    });
+
+                    imagesHtml += '</div>';
+                } else {
+                    logDebug('推文不包含图片');
+                }
+
                 // 构建推文HTML
                 tweetElement.innerHTML = `
                     <div class="tweet-header">
