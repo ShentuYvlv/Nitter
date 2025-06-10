@@ -48,11 +48,25 @@ DEFAULT_STATE = {
     "instances": {}
 }
 
-# 轮询配置
-POLL_INTERVAL = 15          # 统一轮询间隔（秒）
-CONCURRENT_USERS = 5        # 每个实例并发数 - 降低到3避免429错误
-REQUEST_TIMEOUT = 5         # 请求超时时间（秒）
-MAX_RETRIES = 2             # 最大重试次数
+# 轮询配置 - 从Redis动态加载
+POLLING_CONFIG_KEY = "polling_config"
+
+# 默认轮询配置
+DEFAULT_POLLING_CONFIG = {
+    "PRIORITY_POLL_INTERVAL": 10,    # 优先用户轮询间隔（秒）
+    "NORMAL_POLL_INTERVAL": 60,      # 普通用户轮询间隔（秒）
+    "BATCH_SIZE": 15,                # 每批处理的用户数
+    "REQUEST_TIMEOUT": 10,           # 请求超时时间（秒）
+    "MAX_RETRIES": 5,                # 最大重试次数
+    "REQUEST_RATE": 10.0,            # 每秒请求数限制
+    "BURST_CAPACITY": 20             # 突发容量
+}
+
+# 兼容性配置（从动态配置中获取）
+POLL_INTERVAL = 15          # 将从Redis动态更新
+CONCURRENT_USERS = 5        # 将从Redis动态更新
+REQUEST_TIMEOUT = 5         # 将从Redis动态更新
+MAX_RETRIES = 2             # 将从Redis动态更新
 RETRY_DELAYS = [0.5, 1.0]   # 重试延迟（秒）
 RATE_LIMIT_DELAY = 2.0      # 遇到429错误时的额外延迟
 BATCH_DELAY = 0.5           # 批次间基础延迟
@@ -101,10 +115,32 @@ class StateManager:
         """保存状态到文件"""
         try:
             self.state["system"]["last_updated"] = datetime.now().isoformat()
+
+            # 添加调试信息
+            user_count = len(self.state.get("users", {}))
+            logger.debug(f"准备保存状态文件: {self.state_file}, 包含 {user_count} 个用户")
+
+            # 检查最近更新的用户
+            recent_updates = []
+            current_time = time.time()
+            for user_id, user_data in self.state.get("users", {}).items():
+                last_check = user_data.get("last_check_time", 0)
+                if current_time - last_check < 300:  # 5分钟内更新的
+                    recent_updates.append(user_id)
+
+            if recent_updates:
+                logger.debug(f"最近5分钟内更新的用户: {recent_updates[:5]}" +
+                           (f" 等{len(recent_updates)}个" if len(recent_updates) > 5 else ""))
+
             with open(self.state_file, 'w', encoding='utf-8') as f:
                 json.dump(self.state, f, indent=2, ensure_ascii=False)
+
+            logger.debug(f"状态文件保存成功: {self.state_file}")
+
         except IOError as e:
             logger.error(f"保存状态文件失败: {e}")
+        except Exception as e:
+            logger.error(f"保存状态时出现未知错误: {e}")
     
     def get_user_state(self, user_id: str) -> dict:
         """获取用户状态"""
@@ -114,9 +150,21 @@ class StateManager:
         """更新用户状态"""
         if user_id not in self.state["users"]:
             self.state["users"][user_id] = {}
-        
+
+        # 记录更新前的状态（用于调试）
+        old_state = self.state["users"][user_id].copy()
+
         self.state["users"][user_id].update(kwargs)
         self.state["users"][user_id]["last_updated"] = datetime.now().isoformat()
+
+        # 添加调试信息
+        if "last_check_time" in kwargs:
+            logger.debug(f"更新用户 {user_id} 状态: last_check_time={kwargs['last_check_time']}")
+        if "last_tweet_id" in kwargs:
+            old_tweet_id = old_state.get("last_tweet_id", "无")
+            new_tweet_id = kwargs["last_tweet_id"]
+            if old_tweet_id != new_tweet_id:
+                logger.debug(f"用户 {user_id} 推文ID更新: {old_tweet_id} -> {new_tweet_id}")
     
     def get_all_users(self) -> List[str]:
         """获取所有用户ID"""
@@ -162,6 +210,25 @@ class EnhancedPollingEngine:
         # 失败用户队列 - 用于链式批次处理
         self.pending_users = []  # 需要重新处理的用户（主要是429错误）
         self.etag_supported = None  # 缓存ETag支持状态
+
+        # 轮询统计
+        self.polling_stats = {
+            "total_users": 0,
+            "successful_users": 0,
+            "failed_users": 0,
+            "last_cycle_time": None,
+            "current_cycle": 0,
+            "success_rate": 0.0,
+            "failed_user_list": []
+        }
+
+        # 当前轮询周期的统计
+        self.current_cycle_stats = {
+            "processed_users": set(),  # 已处理的用户
+            "successful_users": set(),  # 成功的用户
+            "failed_users": set(),     # 最终失败的用户
+            "user_attempts": {}        # 用户尝试次数记录
+        }
         
         # 连接Redis - 仅用于推文流
         try:
@@ -188,6 +255,10 @@ class EnhancedPollingEngine:
                 "last_reset": time.time()
             }
             
+        # 加载轮询配置
+        self.polling_config = self.load_polling_config()
+        self.apply_polling_config()
+
         logger.info(f"初始化完成，使用 {len(self.instances)} 个Nitter实例")
         self.print_instance_info()
         
@@ -222,7 +293,54 @@ class EnhancedPollingEngine:
         for url, count in instance_user_count.items():
             logger.info(f"  {url}: {count} 个用户")
         logger.info(f"=======================")
-    
+
+    def load_polling_config(self) -> dict:
+        """从Redis加载轮询配置"""
+        try:
+            config_json = self.redis_client.get(POLLING_CONFIG_KEY)
+            if config_json:
+                config = json.loads(config_json)
+                logger.info(f"从Redis加载轮询配置: {config}")
+                return config
+            else:
+                logger.info("Redis中没有轮询配置，使用默认配置")
+                # 保存默认配置到Redis
+                self.redis_client.set(POLLING_CONFIG_KEY, json.dumps(DEFAULT_POLLING_CONFIG))
+                return DEFAULT_POLLING_CONFIG.copy()
+        except Exception as e:
+            logger.error(f"加载轮询配置失败: {e}，使用默认配置")
+            return DEFAULT_POLLING_CONFIG.copy()
+
+    def apply_polling_config(self):
+        """应用轮询配置到全局变量"""
+        global POLL_INTERVAL, CONCURRENT_USERS, REQUEST_TIMEOUT, MAX_RETRIES
+
+        # 映射配置到兼容的全局变量
+        POLL_INTERVAL = self.polling_config.get("NORMAL_POLL_INTERVAL", 60)
+        CONCURRENT_USERS = min(self.polling_config.get("BATCH_SIZE", 15), 10)  # 限制最大并发
+        REQUEST_TIMEOUT = self.polling_config.get("REQUEST_TIMEOUT", 10)
+        MAX_RETRIES = self.polling_config.get("MAX_RETRIES", 5)
+
+        # 更新实例级别的配置
+        self.current_concurrent = CONCURRENT_USERS
+
+        logger.info(f"应用轮询配置:")
+        logger.info(f"  轮询间隔: {POLL_INTERVAL}秒")
+        logger.info(f"  并发用户数: {CONCURRENT_USERS}")
+        logger.info(f"  请求超时: {REQUEST_TIMEOUT}秒")
+        logger.info(f"  最大重试: {MAX_RETRIES}次")
+
+    def reload_polling_config(self):
+        """重新加载轮询配置"""
+        old_config = self.polling_config.copy()
+        self.polling_config = self.load_polling_config()
+
+        if old_config != self.polling_config:
+            logger.info("检测到轮询配置变更，重新应用配置")
+            self.apply_polling_config()
+            return True
+        return False
+
     def load_following_list(self) -> List[Dict]:
         """加载关注用户列表"""
         try:
@@ -363,6 +481,109 @@ class EnhancedPollingEngine:
         
         logger.info("用户重新平衡完成")
         self.print_load_distribution()
+
+    def reset_cycle_stats(self):
+        """重置当前轮询周期统计"""
+        self.current_cycle_stats = {
+            "processed_users": set(),
+            "successful_users": set(),
+            "failed_users": set(),
+            "user_attempts": {}
+        }
+
+    def update_batch_stats(self, batch_results: List[Tuple[str, bool, str]]):
+        """更新批次统计信息（累计到当前轮询周期）并实时更新总体统计"""
+        for user_id, success, error_msg in batch_results:
+            # 记录用户已被处理
+            self.current_cycle_stats["processed_users"].add(user_id)
+
+            # 记录尝试次数
+            if user_id not in self.current_cycle_stats["user_attempts"]:
+                self.current_cycle_stats["user_attempts"][user_id] = []
+            self.current_cycle_stats["user_attempts"][user_id].append((success, error_msg))
+
+            # 如果成功，从失败列表中移除（如果存在）
+            if success:
+                self.current_cycle_stats["successful_users"].add(user_id)
+                self.current_cycle_stats["failed_users"].discard(user_id)
+            else:
+                # 429错误不算失败，会继续重试
+                # 只有真正的错误（网络、解析等）才算失败
+                if "429" not in error_msg and "Rate Limited" not in error_msg:
+                    self.current_cycle_stats["failed_users"].add(user_id)
+                    self.current_cycle_stats["successful_users"].discard(user_id)
+                # 429错误的用户保持在处理中状态，不算成功也不算失败
+
+        # 实时更新总体统计（每批次都更新）
+        self.update_realtime_stats()
+
+    def update_realtime_stats(self):
+        """实时更新总体统计（每批次调用）"""
+        successful_users = self.current_cycle_stats["successful_users"]
+        failed_users = self.current_cycle_stats["failed_users"]
+        processed_users = self.current_cycle_stats["processed_users"]
+
+        # 计算总用户数（应该是所有需要处理的用户）
+        all_users = self.state_manager.get_all_users()
+        total_users = len(all_users)
+
+        # 计算处理中的用户（pending队列中的用户，主要是429错误）
+        pending_count = len(self.pending_users)
+
+        # 更新实时统计数据
+        self.polling_stats["successful_users"] = len(successful_users)
+        self.polling_stats["failed_users"] = len(failed_users)
+        self.polling_stats["total_users"] = total_users
+        self.polling_stats["processed_users"] = len(processed_users)
+        self.polling_stats["pending_users"] = pending_count
+        self.polling_stats["failed_user_list"] = list(failed_users)
+        self.polling_stats["last_cycle_time"] = datetime.now().isoformat()
+
+        if total_users > 0:
+            self.polling_stats["success_rate"] = len(successful_users) / total_users
+        else:
+            self.polling_stats["success_rate"] = 0.0
+
+        # 保存到Redis（实时更新）
+        try:
+            self.redis_client.set("polling_stats", json.dumps(self.polling_stats))
+
+            # 更详细的日志
+            processing_users = len(processed_users) - len(successful_users) - len(failed_users)
+            logger.info(f"📊 实时统计: {len(successful_users)}/{total_users} 成功, "
+                       f"{len(failed_users)} 失败, {pending_count} 待重试 - "
+                       f"成功率: {self.polling_stats['success_rate']:.1%}")
+
+        except Exception as e:
+            logger.error(f"保存实时统计失败: {e}")
+
+    def finalize_cycle_stats(self):
+        """完成当前轮询周期，输出最终统计摘要"""
+        successful_users = self.current_cycle_stats["successful_users"]
+        failed_users = self.current_cycle_stats["failed_users"]
+        total_users = len(self.current_cycle_stats["processed_users"])
+
+        # 最后一次更新统计（确保数据最新）
+        self.update_realtime_stats()
+
+        # 输出周期完成摘要
+        logger.info(f"🏁 轮询周期完成: {len(successful_users)}/{total_users} 成功 "
+                   f"({len(failed_users)} 最终失败) - 成功率: {self.polling_stats['success_rate']:.1%}")
+
+        if failed_users:
+            logger.warning(f"最终失败用户: {', '.join(list(failed_users)[:5])}" +
+                         (f" 等{len(failed_users)}个" if len(failed_users) > 5 else ""))
+
+        # 详细重试统计
+        retry_stats = {}
+        for user_id, attempts in self.current_cycle_stats["user_attempts"].items():
+            retry_count = len(attempts) - 1  # 减去初次尝试
+            if retry_count > 0:
+                retry_stats[user_id] = retry_count
+
+        if retry_stats:
+            logger.info(f"重试统计: {len(retry_stats)} 个用户需要重试，"
+                       f"平均重试 {sum(retry_stats.values()) / len(retry_stats):.1f} 次")
     
     def print_load_distribution(self):
         """打印负载分布情况"""
@@ -1045,14 +1266,32 @@ class EnhancedPollingEngine:
             
             # 收集429限流的用户，加入待处理队列
             rate_limited_users = []
+            batch_results = []
+
             for i, result in enumerate(results):
+                user_id = user_batch[i]
                 if isinstance(result, aiohttp.ClientResponseError) and result.status == 429:
-                    rate_limited_users.append(user_batch[i])
-            
+                    rate_limited_users.append(user_id)
+                    batch_results.append((user_id, False, "429 Rate Limited"))
+                elif isinstance(result, Exception):
+                    batch_results.append((user_id, False, str(result)))
+                else:
+                    batch_results.append((user_id, result, ""))
+
             if rate_limited_users:
                 self.pending_users.extend(rate_limited_users)
                 logger.info(f"🔄 {len(rate_limited_users)} 个用户因429限流加入下一批次: {rate_limited_users}")
-            
+
+            # 更新批次统计
+            self.update_batch_stats(batch_results)
+
+            # 每批次完成后保存状态
+            try:
+                self.state_manager.save_state()
+                logger.debug(f"💾 批次完成后状态已保存")
+            except Exception as e:
+                logger.error(f"💾 批次状态保存失败: {e}")
+
             logger.info(f"批次完成: {len(user_batch)} 用户, {success_count} 个有新推文, {error_count} 个异常 (其中 {rate_limit_count} 个429限流), 耗时: {batch_duration:.2f}秒")
             
             # 如果429错误太多，自动降低并发数
@@ -1106,7 +1345,17 @@ class EnhancedPollingEngine:
                 cycle_count += 1
                 cycle_start = time.time()
                 logger.info(f"开始第 {cycle_count} 轮轮询...")
-                
+
+                # 更新轮询周期
+                self.polling_stats["current_cycle"] = cycle_count
+
+                # 重置当前轮询周期统计
+                self.reset_cycle_stats()
+
+                # 每轮检查配置是否有更新
+                if self.reload_polling_config():
+                    logger.info("轮询配置已更新")
+
                 users = self.state_manager.get_all_users()
                 if not users:
                     logger.warning("没有用户需要轮询")
@@ -1144,13 +1393,16 @@ class EnhancedPollingEngine:
                     if current_index < len(users) or self.pending_users:
                         await asyncio.sleep(BATCH_DELAY)
                 
+                # 完成轮询周期统计
+                self.finalize_cycle_stats()
+
                 # 保存状态
                 save_start = time.time()
                 logger.info(f"💾 开始保存状态文件...")
                 self.state_manager.save_state()
                 save_duration = time.time() - save_start
                 logger.info(f"💾 状态文件保存完成，耗时: {save_duration:.2f}秒")
-                
+
                 cycle_duration = time.time() - cycle_start
                 remaining_pending = len(self.pending_users)
                 logger.info(f"第 {cycle_count} 轮轮询完成! 总耗时: {cycle_duration:.2f}秒, 状态保存耗时: {save_duration:.2f}秒, 剩余待处理: {remaining_pending} 个用户")

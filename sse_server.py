@@ -1182,6 +1182,37 @@ async def index(request: Request):
     """主页"""
     return templates.TemplateResponse("index.html", {"request": request})
 
+# 获取轮询统计信息
+@app.get("/api/polling-stats")
+async def get_polling_stats(redis_client: redis.Redis = Depends(get_redis)):
+    """获取轮询统计信息"""
+    try:
+        # 从Redis获取统计数据
+        stats_json = await redis_client.get("polling_stats")
+
+        if stats_json:
+            stats = json.loads(stats_json)
+        else:
+            # 默认统计数据
+            stats = {
+                "total_users": 0,
+                "successful_users": 0,
+                "failed_users": 0,
+                "last_cycle_time": None,
+                "current_cycle": 0,
+                "success_rate": 0.0,
+                "failed_user_list": []
+            }
+
+        return stats
+
+    except Exception as e:
+        logger.error(f"获取轮询统计失败: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"获取轮询统计失败: {str(e)}"}
+        )
+
 # 获取所有用户列表
 @app.get("/api/users")
 async def get_users(redis_client: redis.Redis = Depends(get_redis)):

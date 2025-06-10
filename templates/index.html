@@ -400,6 +400,56 @@
             border-radius: 12px;
             background-color: #f7f9fa;
         }
+
+        /* 统计面板样式 */
+        .stats-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .stat-item label {
+            font-size: 12px;
+            color: #657786;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #14171a;
+        }
+
+        .stat-detail {
+            font-size: 12px;
+            color: #657786;
+            font-weight: normal;
+        }
+
+        .failed-users-list {
+            font-size: 12px;
+            color: #e0245e;
+            max-height: 100px;
+            overflow-y: auto;
+            background-color: #fde8e8;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #feb2b2;
+        }
+
+        .failed-user-item {
+            margin-bottom: 4px;
+        }
+
+        .failed-user-item:last-child {
+            margin-bottom: 0;
+        }
     </style>
 </head>
 <body>
@@ -493,6 +543,39 @@
                         <button type="button" id="reset-config">重置默认</button>
                     </div>
                 </form>
+            </div>
+
+            <div class="config-panel">
+                <h2>轮询统计</h2>
+                <div class="stats-container">
+                    <div class="stat-item">
+                        <label>当前轮次</label>
+                        <div class="stat-value" id="current-cycle">-</div>
+                    </div>
+
+                    <div class="stat-item">
+                        <label>用户统计</label>
+                        <div class="stat-value" id="user-stats">
+                            <span id="successful-users">0</span>/<span id="total-users">0</span>
+                            <span class="stat-detail">(<span id="failed-users">0</span> 失败, <span id="pending-users">0</span> 重试中)</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-item">
+                        <label>成功率</label>
+                        <div class="stat-value" id="success-rate">0%</div>
+                    </div>
+
+                    <div class="stat-item">
+                        <label>上次轮询</label>
+                        <div class="stat-value" id="last-cycle-time">-</div>
+                    </div>
+
+                    <div class="stat-item" id="failed-users-section" style="display: none;">
+                        <label>失败用户</label>
+                        <div class="stat-value failed-users-list" id="failed-users-list"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1098,10 +1181,69 @@
             document.getElementById('max-retries').value = 5;
             document.getElementById('request-rate').value = 10;
             document.getElementById('burst-capacity').value = 20;
-            
+
             // 提示用户需要点击保存
             showMessage('info', '已重置为默认值，请点击保存按钮应用更改');
             logDebug('轮询配置已重置为默认值');
+        }
+
+        // 加载轮询统计
+        async function loadPollingStats() {
+            try {
+                const response = await fetch('/api/polling-stats');
+                if (response.ok) {
+                    const stats = await response.json();
+                    updateStatsDisplay(stats);
+                } else {
+                    logDebug('加载轮询统计失败');
+                }
+            } catch (error) {
+                console.error('Failed to load polling stats:', error);
+                logDebug(`加载轮询统计出错: ${error.message}`);
+            }
+        }
+
+        // 更新统计显示
+        function updateStatsDisplay(stats) {
+            document.getElementById('current-cycle').textContent = stats.current_cycle || '-';
+            document.getElementById('successful-users').textContent = stats.successful_users || 0;
+            document.getElementById('total-users').textContent = stats.total_users || 0;
+            document.getElementById('failed-users').textContent = stats.failed_users || 0;
+
+            // 显示待重试用户数
+            const pendingUsers = stats.pending_users || 0;
+            const pendingElement = document.getElementById('pending-users');
+            if (pendingElement) {
+                pendingElement.textContent = pendingUsers;
+            }
+
+            const successRate = stats.success_rate || 0;
+            document.getElementById('success-rate').textContent = `${(successRate * 100).toFixed(1)}%`;
+
+            if (stats.last_cycle_time) {
+                const lastTime = new Date(stats.last_cycle_time);
+                document.getElementById('last-cycle-time').textContent = lastTime.toLocaleTimeString();
+            } else {
+                document.getElementById('last-cycle-time').textContent = '-';
+            }
+
+            // 显示失败用户列表
+            const failedUsersSection = document.getElementById('failed-users-section');
+            const failedUsersList = document.getElementById('failed-users-list');
+
+            if (stats.failed_user_list && stats.failed_user_list.length > 0) {
+                failedUsersSection.style.display = 'block';
+                failedUsersList.innerHTML = '';
+
+                stats.failed_user_list.forEach(userId => {
+                    const item = document.createElement('div');
+                    item.className = 'failed-user-item';
+                    item.textContent = userId;
+                    failedUsersList.appendChild(item);
+                });
+            } else {
+                failedUsersSection.style.display = 'none';
+            }
         }
         
         // 初始化
@@ -1109,7 +1251,11 @@
             logDebug('初始化应用...');
             await loadUsers();
             await loadPollingConfig(); // 加载轮询配置
-            
+            await loadPollingStats(); // 加载轮询统计
+
+            // 设置定期更新统计（每30秒）
+            setInterval(loadPollingStats, 30000);
+
             // 连接事件流
             connectToStream();
             
