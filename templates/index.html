@@ -450,6 +450,58 @@
         .failed-user-item:last-child {
             margin-bottom: 0;
         }
+
+        /* 图片放大功能样式 */
+        .tweet-image {
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .tweet-image:hover {
+            transform: scale(1.05);
+        }
+
+        /* 图片放大模态框 */
+        .image-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            cursor: pointer;
+        }
+
+        .image-modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-image {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .image-modal-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 1001;
+        }
+
+        .image-modal-close:hover {
+            color: #ccc;
+        }
     </style>
 </head>
 <body>
@@ -470,7 +522,7 @@
         </div>
         <div>
             <label for="auto-scroll">
-                <input type="checkbox" id="auto-scroll" checked> 自动滚动
+                <input type="checkbox" id="auto-scroll"> 自动滚动
             </label>
         </div>
     </div>
@@ -579,7 +631,13 @@
             </div>
         </div>
     </div>
-    
+
+    <!-- 图片放大模态框 -->
+    <div id="image-modal" class="image-modal">
+        <span class="image-modal-close" id="modal-close">&times;</span>
+        <img id="modal-image" class="modal-image" src="" alt="放大图片">
+    </div>
+
     <script>
         // 全局变量
         let eventSource = null;
@@ -1032,9 +1090,10 @@
                             }
 
                             imagesHtml += `<div class="tweet-image">
-                                <img src="${fixedSrc}" alt="推文图片" loading="lazy"
+                                <img src="${fixedSrc}" alt="推文图片" loading="lazy" class="tweet-image clickable-image"
                                      onerror="console.error('图片加载失败:', this.src); this.style.display='none';"
-                                     onload="console.log('图片加载成功:', this.src);">
+                                     onload="console.log('图片加载成功:', this.src);"
+                                     onclick="openImageModal('${fixedSrc}')">
                             </div>`;
                         }
                     });
@@ -1245,7 +1304,31 @@
                 failedUsersSection.style.display = 'none';
             }
         }
-        
+
+        // 图片放大功能
+        function openImageModal(imageSrc) {
+            const modal = document.getElementById('image-modal');
+            const modalImage = document.getElementById('modal-image');
+
+            modalImage.src = imageSrc;
+            modal.classList.add('show');
+
+            // 阻止页面滚动
+            document.body.style.overflow = 'hidden';
+
+            logDebug(`打开图片放大: ${imageSrc}`);
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('image-modal');
+            modal.classList.remove('show');
+
+            // 恢复页面滚动
+            document.body.style.overflow = 'auto';
+
+            logDebug('关闭图片放大');
+        }
+
         // 初始化
         async function init() {
             logDebug('初始化应用...');
@@ -1290,6 +1373,27 @@
             // 添加配置面板事件监听器
             document.getElementById('save-config').addEventListener('click', savePollingConfig);
             document.getElementById('reset-config').addEventListener('click', resetPollingConfig);
+
+            // 添加图片模态框事件监听器
+            const imageModal = document.getElementById('image-modal');
+            const modalClose = document.getElementById('modal-close');
+
+            // 点击关闭按钮
+            modalClose.addEventListener('click', closeImageModal);
+
+            // 点击模态框背景关闭
+            imageModal.addEventListener('click', (e) => {
+                if (e.target === imageModal) {
+                    closeImageModal();
+                }
+            });
+
+            // ESC键关闭
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && imageModal.classList.contains('show')) {
+                    closeImageModal();
+                }
+            });
         }
         
         // 启动应用
