@@ -1,6 +1,6 @@
 {
   "system": {
-    "last_updated": "2025-06-13T22:26:32.487127",
+    "last_updated": "2025-06-13T22:32:13.271288",
     "version": "1.0"
   },
   "users": {
@@ -8,22 +8,27 @@
       "display_name": "wower",
       "last_check": null,
       "last_tweet_id": "1932052055096463552#m",
-      "last_updated": "2025-06-13T22:26:25.512073",
-      "last_check_time": 1749824785.5120735,
+      "last_updated": "2025-06-13T22:32:02.147799",
+      "last_check_time": 1749825122.1477997,
       "network_error_count": 2,
       "rate_limit_count": 18,
       "content_hash": "243b4f6014dc9d1fdc26de8a2d68b949",
       "initialized": true,
-      "username": "wower"
+      "username": "wower",
+      "last_success_time": 1749825122.1477997
     },
     "Aster_DEX": {
       "display_name": "Aster",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T22:15:54.459726",
-      "last_check_time": 1749824154.4597268,
+      "last_tweet_id": "1933528118746358177#m",
+      "last_updated": "2025-06-13T22:31:30.438095",
+      "last_check_time": 1749825090.4380953,
       "network_error_count": 2,
-      "rate_limit_count": 15
+      "rate_limit_count": 15,
+      "content_hash": "086253818d2e0cb343c0d84c565b1b06",
+      "last_success_time": 1749825090.4380953,
+      "initialized": true,
+      "username": "Aster"
     },
     "bocaibocai_": {
       "display_name": "菠菜菠菜｜bocaibocai",
@@ -38,12 +43,12 @@
       "display_name": "D_Block",
       "last_check": null,
       "last_tweet_id": "1933524653932491146#m",
-      "last_updated": "2025-06-13T22:26:32.393923",
-      "last_check_time": 1749824792.3939235,
+      "last_updated": "2025-06-13T22:31:34.315585",
+      "last_check_time": 1749825094.3155856,
       "network_error_count": 2,
       "rate_limit_count": 13,
       "content_hash": "f7c52b4976906508abffdab1c3dd2625",
-      "last_success_time": 1749823330.298444,
+      "last_success_time": 1749825094.3155856,
       "initialized": true,
       "username": "D_Block"
     },
@@ -51,12 +56,12 @@
       "display_name": "Meteora",
       "last_check": null,
       "last_tweet_id": "1933529202399326617#m",
-      "last_updated": "2025-06-13T22:26:23.534569",
-      "last_check_time": 1749824783.534569,
+      "last_updated": "2025-06-13T22:30:49.700714",
+      "last_check_time": 1749825049.700715,
       "network_error_count": 2,
       "rate_limit_count": 5,
       "content_hash": "e0f937e1deace9414bb2a52091deda94",
-      "last_success_time": 1749824783.534569,
+      "last_success_time": 1749825049.700715,
       "initialized": true,
       "username": "Meteora"
     },
@@ -75,20 +80,26 @@
     "pumpdotfun": {
       "display_name": "pump.fun",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T22:15:54.459176",
-      "last_check_time": 1749824154.459177,
+      "last_tweet_id": "1933213538899661193#m",
+      "last_updated": "2025-06-13T22:31:32.219916",
+      "last_check_time": 1749825092.219916,
       "network_error_count": 2,
-      "rate_limit_count": 15
+      "rate_limit_count": 16,
+      "content_hash": "482c3aeecb5f3e8a536ef2fccf8efbbe",
+      "initialized": true,
+      "username": "pump.fun"
     },
     "LeePima": {
       "display_name": "Pima",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T22:15:54.461388",
-      "last_check_time": 1749824154.4613883,
+      "last_tweet_id": "1932280463873417244#m",
+      "last_updated": "2025-06-13T22:31:45.845314",
+      "last_check_time": 1749825105.845314,
       "network_error_count": 2,
-      "rate_limit_count": 15
+      "rate_limit_count": 15,
+      "content_hash": "a55b3315bf6d3ed245cdcd73043745a8",
+      "initialized": true,
+      "username": "Pima"
     },
     "off_thetarget": {
       "display_name": "pepper 花椒 解盘㊂ 正EV",
@@ -107,25 +118,27 @@
       "display_name": "Lucas 会搞钱",
       "last_check": null,
       "last_tweet_id": "1933148063331463269#m",
-      "last_updated": "2025-06-13T22:26:21.271298",
-      "last_check_time": 1749824781.271299,
+      "last_updated": "2025-06-13T22:31:33.988187",
+      "last_check_time": 1749825093.988187,
       "network_error_count": 2,
       "rate_limit_count": 16,
       "content_hash": "f82e9c9cadb4865d705d5bab69881f7c",
       "initialized": true,
-      "username": "Lucas 会搞钱"
+      "username": "Lucas 会搞钱",
+      "last_success_time": 1749825093.988187
     },
     "cryptoxfeng": {
       "display_name": "Feng",
       "last_check": null,
       "last_tweet_id": "1933145908751011962#m",
-      "last_updated": "2025-06-13T22:15:54.457069",
-      "last_check_time": 1749824154.4570694,
+      "last_updated": "2025-06-13T22:31:51.289602",
+      "last_check_time": 1749825111.289602,
       "network_error_count": 2,
       "rate_limit_count": 10,
       "content_hash": "73636ceb80fd018f99019be5ce9304eb",
       "initialized": true,
-      "username": "Feng"
+      "username": "Feng",
+      "last_success_time": 1749825111.289602
     },
     "865108755Nxx": {
       "display_name": "予与vkx",
@@ -155,27 +168,39 @@
     "op7418": {
       "display_name": "歸藏(guizang.ai)",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T22:15:54.457536",
-      "last_check_time": 1749824154.457536,
+      "last_tweet_id": "1933368189553160511#m",
+      "last_updated": "2025-06-13T22:31:39.628178",
+      "last_check_time": 1749825099.6281786,
       "network_error_count": 2,
-      "rate_limit_count": 1
+      "rate_limit_count": 1,
+      "content_hash": "c71e5656f094d6a24f76a904dfaba58f",
+      "last_success_time": 1749825099.6281786,
+      "initialized": true,
+      "username": "歸藏(guizang.ai)"
     },
     "EarningArtist": {
       "display_name": "Earning Artist",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:35.015708",
-      "last_check_time": 1749823115.0157087,
-      "network_error_count": 2
+      "last_tweet_id": "1933317028494127244#m",
+      "last_updated": "2025-06-13T22:31:04.879585",
+      "last_check_time": 1749825064.8795857,
+      "network_error_count": 2,
+      "content_hash": "d41978091ef8879aefd6791296ca1474",
+      "last_success_time": 1749825064.8795857,
+      "initialized": true,
+      "username": "Earning Artist"
     },
     "GoudanWoo": {
       "display_name": "吴狗蛋 • 十八线小科学家 / 偶尔聊点亏钱项目",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:35.015708",
-      "last_check_time": 1749823115.0157087,
-      "network_error_count": 2
+      "last_tweet_id": "1928929769930014985#m",
+      "last_updated": "2025-06-13T22:31:55.380412",
+      "last_check_time": 1749825115.380412,
+      "network_error_count": 2,
+      "rate_limit_count": 1,
+      "content_hash": "ebbe2e09cee472b2e6646d77cb6d6373",
+      "initialized": true,
+      "username": "吴狗蛋 • 十八线小科学家 / 偶尔聊点亏钱项目"
     },
     "LeotheHorseman": {
       "display_name": "Leo the Horseman (wartime arc)",
@@ -196,18 +221,25 @@
     "807743450Li": {
       "display_name": "LI HD",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:35.015708",
-      "last_check_time": 1749823115.0157087,
-      "network_error_count": 2
+      "last_tweet_id": "1929863845813813494#m",
+      "last_updated": "2025-06-13T22:30:50.955623",
+      "last_check_time": 1749825050.955623,
+      "network_error_count": 2,
+      "content_hash": "38c7005795865dad50fdd9c233525300",
+      "initialized": true,
+      "username": "LI HD"
     },
     "ViNc2453": {
       "display_name": "ViNc | Pendle Sensei ",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:35.015708",
-      "last_check_time": 1749823115.0157087,
-      "network_error_count": 2
+      "last_tweet_id": "1933413863506260274#m",
+      "last_updated": "2025-06-13T22:30:49.123514",
+      "last_check_time": 1749825049.1235142,
+      "network_error_count": 2,
+      "content_hash": "985f6623e73fdcbc7d0ba80a1694fd50",
+      "last_success_time": 1749825049.1235142,
+      "initialized": true,
+      "username": "ViNc | Pendle Sensei 🌸"
     },
     "ZLiao3": {
       "display_name": "橘皮乌龙||Leo",
@@ -220,10 +252,14 @@
     "BlockBeatsAsia": {
       "display_name": "BlockBeats｜We're hiring!",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:35.550870",
-      "last_check_time": 1749823115.550871,
-      "network_error_count": 2
+      "last_tweet_id": "1933478074362048581#m",
+      "last_updated": "2025-06-13T22:30:59.001300",
+      "last_check_time": 1749825059.0013008,
+      "network_error_count": 2,
+      "content_hash": "000dcb152fc98e4f56b7e6ca00bbab78",
+      "last_success_time": 1749825059.0013008,
+      "initialized": true,
+      "username": "BlockBeats｜We're hiring!"
     },
     "DL_W59": {
       "display_name": "DC大于C",
@@ -236,10 +272,14 @@
     "canhua1023": {
       "display_name": "东之伊甸丶",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:35.551888",
-      "last_check_time": 1749823115.5518885,
-      "network_error_count": 2
+      "last_tweet_id": "1933507267925848450#m",
+      "last_updated": "2025-06-13T22:31:02.342897",
+      "last_check_time": 1749825062.3428972,
+      "network_error_count": 2,
+      "content_hash": "2aaa6eda30b26d49387c8acaae00bd5f",
+      "last_success_time": 1749825062.3428972,
+      "initialized": true,
+      "username": "东之伊甸丶"
     },
     "sunlc_crypto": {
       "display_name": "sunlc.eth.lens",
@@ -303,10 +343,14 @@
     "mirrorzk": {
       "display_name": "Mirror Tang",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:36.081293",
-      "last_check_time": 1749823116.0812936,
-      "network_error_count": 2
+      "last_tweet_id": "1933508443081748723#m",
+      "last_updated": "2025-06-13T22:31:53.398387",
+      "last_check_time": 1749825113.398387,
+      "network_error_count": 2,
+      "content_hash": "997d3a87f34456783d6fa9afd957829b",
+      "last_success_time": 1749825113.398387,
+      "initialized": true,
+      "username": "Mirror Tang"
     },
     "worldlibertyfi": {
       "display_name": "WLFI",
@@ -335,26 +379,37 @@
     "arkham": {
       "display_name": "Arkham",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:36.083386",
-      "last_check_time": 1749823116.0833862,
-      "network_error_count": 2
+      "last_tweet_id": "1933240931685421363#m",
+      "last_updated": "2025-06-13T22:31:29.897296",
+      "last_check_time": 1749825089.8972967,
+      "network_error_count": 2,
+      "content_hash": "265959ab31622519aa4a138a9c6576fe",
+      "initialized": true,
+      "username": "Arkham"
     },
     "cryptobraveHQ": {
       "display_name": "加密无畏",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:36.084419",
-      "last_check_time": 1749823116.0844193,
-      "network_error_count": 2
+      "last_tweet_id": "1933441999400808550#m",
+      "last_updated": "2025-06-13T22:32:05.977108",
+      "last_check_time": 1749825125.9771082,
+      "network_error_count": 2,
+      "content_hash": "ed8d52c38c23249ed4a6093d47bb06ee",
+      "last_success_time": 1749825125.9771082,
+      "initialized": true,
+      "username": "加密无畏"
     },
     "hunghungdi49576": {
       "display_name": "狮子狮子",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:36.084419",
-      "last_check_time": 1749823116.0844193,
-      "network_error_count": 2
+      "last_tweet_id": "1933467644403105882#m",
+      "last_updated": "2025-06-13T22:31:48.970784",
+      "last_check_time": 1749825108.9707844,
+      "network_error_count": 2,
+      "content_hash": "461e113a8c061d218f26664732afcbc3",
+      "last_success_time": 1749825108.9707844,
+      "initialized": true,
+      "username": "狮子狮子"
     },
     "qingtianbtc": {
       "display_name": "交易员晴天",
@@ -367,18 +422,25 @@
     "chems_zz": {
       "display_name": "chems",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:36.084906",
-      "last_check_time": 1749823116.0849066,
-      "network_error_count": 2
+      "last_tweet_id": "1933338740933775816#m",
+      "last_updated": "2025-06-13T22:31:59.613298",
+      "last_check_time": 1749825119.6132982,
+      "network_error_count": 2,
+      "content_hash": "4f4d8c2df02661e923b83040bf8de8c7",
+      "last_success_time": 1749825119.6132982,
+      "initialized": true,
+      "username": "chems"
     },
     "devilcatbtc": {
       "display_name": "茂茂大魔王",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:36.605947",
-      "last_check_time": 1749823116.605947,
-      "network_error_count": 2
+      "last_tweet_id": "1932978895428727095#m",
+      "last_updated": "2025-06-13T22:31:36.315902",
+      "last_check_time": 1749825096.3159022,
+      "network_error_count": 2,
+      "content_hash": "820de29cefa3fc82a3bbf0d5a9f95263",
+      "initialized": true,
+      "username": "茂茂大魔王"
     },
     "siyizhisheng3": {
       "display_name": "思以智胜",
@@ -475,10 +537,13 @@
     "MAwilda5680": {
       "display_name": "瑜之欲",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:37.133951",
-      "last_check_time": 1749823117.1339512,
-      "network_error_count": 2
+      "last_tweet_id": "1927342152561909894#m",
+      "last_updated": "2025-06-13T22:31:43.002749",
+      "last_check_time": 1749825103.0027492,
+      "network_error_count": 2,
+      "content_hash": "3230517812abbe31f266ff4a98972bc2",
+      "initialized": true,
+      "username": "瑜之欲"
     },
     "Web3FRZ": {
       "display_name": "Web3小樊总",
@@ -507,18 +572,25 @@
     "liangxihuigui": {
       "display_name": "凉兮大元帅（白虎）",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:37.135279",
-      "last_check_time": 1749823117.1352797,
-      "network_error_count": 2
+      "last_tweet_id": "1932804722291061105#m",
+      "last_updated": "2025-06-13T22:30:56.174387",
+      "last_check_time": 1749825056.174388,
+      "network_error_count": 2,
+      "content_hash": "2406df723cca5244e0e6cc8692edb283",
+      "initialized": true,
+      "username": "凉兮大元帅（白虎）"
     },
     "Boywus": {
       "display_name": "Boywus",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:37.136055",
-      "last_check_time": 1749823117.1360557,
-      "network_error_count": 2
+      "last_tweet_id": "1933390470492950969#m",
+      "last_updated": "2025-06-13T22:31:57.947842",
+      "last_check_time": 1749825117.9478424,
+      "network_error_count": 2,
+      "content_hash": "ed0e85303004028f5b972d0efae04923",
+      "last_success_time": 1749825117.9478424,
+      "initialized": true,
+      "username": "@Boywus"
     },
     "yoglehonpo": {
       "display_name": "ヨーグル本舗",
@@ -547,10 +619,13 @@
     "Cupseyy": {
       "display_name": "Cupsey",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:37.655671",
-      "last_check_time": 1749823117.6556711,
-      "network_error_count": 2
+      "last_tweet_id": "1924887620472946897#m",
+      "last_updated": "2025-06-13T22:32:13.009744",
+      "last_check_time": 1749825133.0097444,
+      "network_error_count": 2,
+      "content_hash": "c87bc5f9029bfd369a44018696d62a0a",
+      "initialized": true,
+      "username": "Cupsey"
     },
     "HtrZac": {
       "display_name": "Zac",
@@ -584,17 +659,19 @@
       "display_name": "pow",
       "last_check": null,
       "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:37.656580",
-      "last_check_time": 1749823117.6565802,
-      "network_error_count": 2
+      "last_updated": "2025-06-13T22:31:05.071640",
+      "last_check_time": 1749825065.0716403,
+      "network_error_count": 2,
+      "rate_limit_count": 7
     },
     "brc20niubi": {
       "display_name": "王小二",
       "last_check": null,
       "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:37.656580",
-      "last_check_time": 1749823117.6565802,
-      "network_error_count": 2
+      "last_updated": "2025-06-13T22:32:09.348884",
+      "last_check_time": 1749825129.348885,
+      "network_error_count": 2,
+      "http_error_count": 1
     },
     "BitCloutCat": {
       "display_name": "LaserCat397.eth",
@@ -616,12 +693,13 @@
       "display_name": "Aliez Ren",
       "last_check": null,
       "last_tweet_id": "1933109956968169887#m",
-      "last_updated": "2025-06-13T22:26:32.293391",
-      "last_check_time": 1749824792.293392,
+      "last_updated": "2025-06-13T22:30:45.799005",
+      "last_check_time": 1749825045.799005,
       "network_error_count": 2,
       "content_hash": "422592d2fa1a9e27967882471ee26341",
       "initialized": true,
-      "username": "Aliez Ren"
+      "username": "Aliez Ren",
+      "last_success_time": 1749825045.799005
     },
     "Nuanran01": {
       "display_name": "风火山林",
@@ -698,37 +776,50 @@
     "rnmumu3": {
       "display_name": "十年一梦",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:38.189464",
-      "last_check_time": 1749823118.1894646,
-      "network_error_count": 2
+      "last_tweet_id": "1933514982261731765#m",
+      "last_updated": "2025-06-13T22:30:51.068563",
+      "last_check_time": 1749825051.0685632,
+      "network_error_count": 2,
+      "rate_limit_count": 1,
+      "content_hash": "050cb1b61e566f6942b48377b9672d46",
+      "last_success_time": 1749825051.0685632,
+      "initialized": true,
+      "username": "十年一梦"
     },
     "rara8hachi1": {
       "display_name": "らら8＠子豚の館 新作（３月９日）発売中！",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:38.701635",
-      "last_check_time": 1749823118.7016356,
-      "network_error_count": 2
+      "last_tweet_id": "1931734450741932259#m",
+      "last_updated": "2025-06-13T22:30:49.169385",
+      "last_check_time": 1749825049.1693852,
+      "network_error_count": 2,
+      "content_hash": "99f04b707b01fd72c669b119c1fbe6d1",
+      "initialized": true,
+      "username": "らら8＠子豚の館 🔞新作（３月９日）発売中！"
     },
     "xxxApril_D13": {
       "display_name": "April",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:38.701635",
-      "last_check_time": 1749823118.7016356,
-      "network_error_count": 2
+      "last_tweet_id": "1933468716500652183#m",
+      "last_updated": "2025-06-13T22:31:29.529043",
+      "last_check_time": 1749825089.529044,
+      "network_error_count": 2,
+      "content_hash": "280cb4ab70d8696e97f8da99ec3e1740",
+      "last_success_time": 1749825089.529044,
+      "initialized": true,
+      "username": "April"
     },
     "DesireCandy69": {
       "display_name": "LustCandy 欲望糖果( 3D R18 漫畫)",
       "last_check": null,
       "last_tweet_id": "1924841791704203762#m",
-      "last_updated": "2025-06-13T22:26:30.104197",
-      "last_check_time": 1749824790.1041973,
+      "last_updated": "2025-06-13T22:31:48.759246",
+      "last_check_time": 1749825108.7592468,
       "network_error_count": 2,
       "content_hash": "f4df5e96a083bd3b4ea1587c545e171c",
       "initialized": true,
-      "username": "LustCandy 欲望糖果( 3D R18 漫畫)"
+      "username": "LustCandy 欲望糖果( 3D R18 漫畫)",
+      "last_success_time": 1749825108.7592468
     },
     "binancezh": {
       "display_name": "币安Binance华语",
@@ -741,10 +832,15 @@
     "Cryptowushi": {
       "display_name": "0xCrypto巫师",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:38.705273",
-      "last_check_time": 1749823118.7052736,
-      "network_error_count": 2
+      "last_tweet_id": "1933517675856343042#m",
+      "last_updated": "2025-06-13T22:31:34.055898",
+      "last_check_time": 1749825094.055899,
+      "network_error_count": 2,
+      "rate_limit_count": 2,
+      "content_hash": "6d6f0ea60bdac9e689929a40434d6c75",
+      "last_success_time": 1749825094.055899,
+      "initialized": true,
+      "username": "0xCrypto巫师"
     },
     "0xblockma": {
       "display_name": "区块马",
@@ -793,10 +889,14 @@
     "AethirCloud": {
       "display_name": "Aethir",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:39.230957",
-      "last_check_time": 1749823119.2309577,
-      "network_error_count": 2
+      "last_tweet_id": "1933494574887882983#m",
+      "last_updated": "2025-06-13T22:32:05.862742",
+      "last_check_time": 1749825125.862743,
+      "network_error_count": 2,
+      "content_hash": "ff7831dc2d6c5622c716a1dce5b70556",
+      "last_success_time": 1749825125.862743,
+      "initialized": true,
+      "username": "Aethir"
     },
     "BTCBruce1": {
       "display_name": "Bruce J",
@@ -821,18 +921,25 @@
     "BobBodily": {
       "display_name": "Bob Bodily, PhD  | #BTC #ETH #ICP ",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:39.230957",
-      "last_check_time": 1749823119.2309577,
-      "network_error_count": 2
+      "last_tweet_id": "1933303450860990890#m",
+      "last_updated": "2025-06-13T22:31:37.304735",
+      "last_check_time": 1749825097.3047354,
+      "network_error_count": 2,
+      "content_hash": "c3de3857641eb926f3df254b302d61a4",
+      "initialized": true,
+      "username": "Bob Bodily, PhD 👋 | #BTC #ETH #ICP 🧙🏽‍♂️"
     },
     "luckyrich333": {
       "display_name": "饭导爱玩小猫咪",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:39.230957",
-      "last_check_time": 1749823119.2309577,
-      "network_error_count": 2
+      "last_tweet_id": "1933121896582873440#m",
+      "last_updated": "2025-06-13T22:31:39.302868",
+      "last_check_time": 1749825099.3028684,
+      "network_error_count": 2,
+      "rate_limit_count": 2,
+      "content_hash": "ba88a8c1cbd0084d1270d737e958aaad",
+      "initialized": true,
+      "username": "饭导爱玩小猫咪"
     },
     "0x0xFeng": {
       "display_name": "风无向",
@@ -855,12 +962,13 @@
       "display_name": "艾克Ekko",
       "last_check": null,
       "last_tweet_id": "1895034360778367279#m",
-      "last_updated": "2025-06-13T22:26:32.214824",
-      "last_check_time": 1749824792.214825,
+      "last_updated": "2025-06-13T22:32:03.899799",
+      "last_check_time": 1749825123.8997998,
       "network_error_count": 2,
       "content_hash": "103aa2a9e88b214a5603209b3a3b944a",
       "initialized": true,
-      "username": "艾克Ekko"
+      "username": "艾克Ekko",
+      "last_success_time": 1749825123.8997998
     },
     "19ys_GGboy": {
       "display_name": "十九岁绿帽少年",
@@ -881,18 +989,27 @@
     "0xAA_Science": {
       "display_name": "0xAA",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:39.760985",
-      "last_check_time": 1749823119.7609854,
-      "network_error_count": 2
+      "last_tweet_id": "1933457924527190468#m",
+      "last_updated": "2025-06-13T22:31:41.685545",
+      "last_check_time": 1749825101.6855452,
+      "network_error_count": 2,
+      "content_hash": "c6c5f5790b7f79690aa27f9f7a603644",
+      "last_success_time": 1749825101.6855452,
+      "initialized": true,
+      "username": "0xAA"
     },
     "0x_zibu": {
       "display_name": "子布",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:39.761991",
-      "last_check_time": 1749823119.761991,
-      "network_error_count": 2
+      "last_tweet_id": "1933522459351024013#m",
+      "last_updated": "2025-06-13T22:31:46.781790",
+      "last_check_time": 1749825106.7817907,
+      "network_error_count": 2,
+      "rate_limit_count": 3,
+      "content_hash": "bd5661a894044e3bbe16219f7d3db61e",
+      "last_success_time": 1749825106.7817907,
+      "initialized": true,
+      "username": "子布"
     },
     "AggrNews": {
       "display_name": "Aggr News",
@@ -905,10 +1022,14 @@
     "0xJingleMingle": {
       "display_name": "Jingle",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:39.761991",
-      "last_check_time": 1749823119.761991,
-      "network_error_count": 2
+      "last_tweet_id": "1932007207383789686#m",
+      "last_updated": "2025-06-13T22:31:48.840107",
+      "last_check_time": 1749825108.8401072,
+      "network_error_count": 2,
+      "rate_limit_count": 1,
+      "content_hash": "228164b3f318610c6be45c3c13a71bc3",
+      "initialized": true,
+      "username": "Jingle"
     },
     "0xCryptoWing": {
       "display_name": "Lam",
@@ -945,10 +1066,13 @@
     "shoucccc": {
       "display_name": "Chaofan Shou (svm/acc)",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:58:39.762991",
-      "last_check_time": 1749823119.7629917,
-      "network_error_count": 2
+      "last_tweet_id": "1928189790903750932#m",
+      "last_updated": "2025-06-13T22:31:55.479861",
+      "last_check_time": 1749825115.4798615,
+      "network_error_count": 2,
+      "content_hash": "0be38c5c969d8675a4e9a19e8e723008",
+      "initialized": true,
+      "username": "Chaofan Shou (svm/acc)"
     },
     "tonykebot": {
       "display_name": "Tony KΞ",
@@ -969,18 +1093,27 @@
     "missoralways": {
       "display_name": "A",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:57:52.499437",
-      "last_check_time": 1749823072.4994376,
-      "network_error_count": 1
+      "last_tweet_id": "1933505031220662686#m",
+      "last_updated": "2025-06-13T22:31:05.856270",
+      "last_check_time": 1749825065.8562706,
+      "network_error_count": 1,
+      "rate_limit_count": 1,
+      "content_hash": "53a7df972a6bcf71aaaa2276c9016871",
+      "last_success_time": 1749825065.8562706,
+      "initialized": true,
+      "username": "A"
     },
     "aeyakovenko": {
       "display_name": "toly ",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:57:52.500573",
-      "last_check_time": 1749823072.5005739,
-      "network_error_count": 1
+      "last_tweet_id": "1933368147131969743#m",
+      "last_updated": "2025-06-13T22:32:13.270474",
+      "last_check_time": 1749825133.2704742,
+      "network_error_count": 1,
+      "content_hash": "4bf42cd69bd33f6e00be3cba7839046f",
+      "last_success_time": 1749825133.2704742,
+      "initialized": true,
+      "username": "toly 🇺🇸"
     },
     "cryptomoon520": {
       "display_name": "从零开始的打狗生活",
@@ -1001,10 +1134,15 @@
     "abyssofgambling": {
       "display_name": "HK•雷氏区块链前台牛英俊",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:57:52.503520",
-      "last_check_time": 1749823072.5035205,
-      "network_error_count": 1
+      "last_tweet_id": "1933496169415782464#m",
+      "last_updated": "2025-06-13T22:31:53.553381",
+      "last_check_time": 1749825113.5533814,
+      "network_error_count": 1,
+      "rate_limit_count": 1,
+      "content_hash": "fd73334c1d5f5dea3d3884a7654960a1",
+      "last_success_time": 1749825113.5533814,
+      "initialized": true,
+      "username": "HK•雷氏区块链前台牛英俊"
     },
     "superdope_BOBO": {
       "display_name": "BOBO",
@@ -1022,10 +1160,15 @@
     "wangyiduo0404": {
       "display_name": "Shark | 1000xGEM",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:57:52.505315",
-      "last_check_time": 1749823072.505315,
-      "network_error_count": 1
+      "last_tweet_id": "1933480665598865699#m",
+      "last_updated": "2025-06-13T22:31:43.501614",
+      "last_check_time": 1749825103.5016148,
+      "network_error_count": 1,
+      "rate_limit_count": 6,
+      "content_hash": "8cbc894202addb7d3aa53530bb366841",
+      "last_success_time": 1749825103.5016148,
+      "initialized": true,
+      "username": "Shark | 1000xGEM"
     },
     "LAPUTA9999": {
       "display_name": "LAPUTA",
@@ -1038,10 +1181,14 @@
     "niuniu255431": {
       "display_name": "周期手牛牛",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:57:52.506976",
-      "last_check_time": 1749823072.5069766,
-      "network_error_count": 1
+      "last_tweet_id": "1933351093192569052#m",
+      "last_updated": "2025-06-13T22:32:10.559220",
+      "last_check_time": 1749825130.5592203,
+      "network_error_count": 1,
+      "content_hash": "7206789894bced311d439db4d60f699b",
+      "last_success_time": 1749825130.5592203,
+      "initialized": true,
+      "username": "周期手牛牛"
     },
     "Cody_DeFi": {
       "display_name": "Cody_DeFi",
@@ -1054,18 +1201,26 @@
     "UnicornBitcoin": {
       "display_name": "UNICORN",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:57:53.051005",
-      "last_check_time": 1749823073.0510051,
-      "network_error_count": 1
+      "last_tweet_id": "1933443690426740791#m",
+      "last_updated": "2025-06-13T22:30:53.294907",
+      "last_check_time": 1749825053.294907,
+      "network_error_count": 1,
+      "content_hash": "19ba7893676058c7c1b26d585076697f",
+      "last_success_time": 1749825053.294907,
+      "initialized": true,
+      "username": "UNICORN⚡️🦄"
     },
     "0xLaughing": {
       "display_name": "Laughing",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:57:53.051005",
-      "last_check_time": 1749823073.0510051,
-      "network_error_count": 1
+      "last_tweet_id": "1930571565802164666#m",
+      "last_updated": "2025-06-13T22:30:56.193103",
+      "last_check_time": 1749825056.193103,
+      "network_error_count": 1,
+      "rate_limit_count": 2,
+      "content_hash": "60e1321b45dd2498991e84de0c8d31eb",
+      "initialized": true,
+      "username": "Laughing🪁"
     },
     "ospopen": {
       "display_name": "吴翱翔 Kira",
@@ -1102,18 +1257,24 @@
     "Jason60704294": {
       "display_name": "jasonleo",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:57:53.058157",
-      "last_check_time": 1749823073.0581572,
-      "network_error_count": 1
+      "last_tweet_id": "1926326956934438942#m",
+      "last_updated": "2025-06-13T22:31:57.201221",
+      "last_check_time": 1749825117.2012212,
+      "network_error_count": 1,
+      "content_hash": "1daf6f2264f86addee8d0b18bdb1d3c4",
+      "initialized": true,
+      "username": "jasonleo"
     },
     "tocuee": {
       "display_name": "Q",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:57:53.058669",
-      "last_check_time": 1749823073.0586693,
-      "network_error_count": 1
+      "last_tweet_id": "1925883189970542929#m",
+      "last_updated": "2025-06-13T22:31:51.397668",
+      "last_check_time": 1749825111.3976688,
+      "network_error_count": 1,
+      "content_hash": "6a47fe8f4cdc5b3dc88b553e13087699",
+      "initialized": true,
+      "username": "Q"
     },
     "CryptoDevinL": {
       "display_name": "CryptoD | 1000X GEM",
@@ -1159,28 +1320,35 @@
       "display_name": "lky",
       "last_check": null,
       "last_tweet_id": "1929223961394512266#m",
-      "last_updated": "2025-06-13T22:26:21.152852",
-      "last_check_time": 1749824781.1528525,
+      "last_updated": "2025-06-13T22:31:51.059974",
+      "last_check_time": 1749825111.0599742,
       "network_error_count": 1,
       "content_hash": "48170ce45b01f79a983df2621edea253",
       "initialized": true,
-      "username": "lky"
+      "username": "lky",
+      "last_success_time": 1749825111.0599742
     },
     "corleonefnf": {
       "display_name": "JAMES",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:57:53.602476",
-      "last_check_time": 1749823073.6024764,
-      "network_error_count": 1
+      "last_tweet_id": "1932700843486425417#m",
+      "last_updated": "2025-06-13T22:32:08.722705",
+      "last_check_time": 1749825128.7227056,
+      "network_error_count": 1,
+      "content_hash": "49d9d505305aa12a622b4f9faefdf11a",
+      "initialized": true,
+      "username": "JAMES"
     },
     "VeronicaPump": {
       "display_name": "Veronica",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:57:53.602476",
-      "last_check_time": 1749823073.6024764,
-      "network_error_count": 1
+      "last_tweet_id": "1897070009366798516#m",
+      "last_updated": "2025-06-13T22:32:01.745890",
+      "last_check_time": 1749825121.7458901,
+      "network_error_count": 1,
+      "content_hash": "bf839bd2732ebd796fdce1b4ebaf7fa8",
+      "initialized": true,
+      "username": "Veronica"
     },
     "Unipioneer": {
       "display_name": "0xuezhang|985.eth",
@@ -1233,10 +1401,14 @@
     "Ed_x0101": {
       "display_name": "Ed_x區塊日記",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:57:54.141971",
-      "last_check_time": 1749823074.141971,
-      "network_error_count": 1
+      "last_tweet_id": "1933427309987705036#m",
+      "last_updated": "2025-06-13T22:31:31.778382",
+      "last_check_time": 1749825091.778382,
+      "network_error_count": 1,
+      "content_hash": "dd2479fdea6251c0551fff1cde532d60",
+      "last_success_time": 1749825091.778382,
+      "initialized": true,
+      "username": "Ed_x區塊日記🇭🇰"
     },
     "kkkk34594": {
       "display_name": "kkkk（回本版）",
@@ -1289,8 +1461,14 @@
     "qianxishequ": {
       "display_name": "凯",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:55:36.231226"
+      "last_tweet_id": "1932728090666676416#m",
+      "last_updated": "2025-06-13T22:31:58.489779",
+      "last_check_time": 1749825118.4897795,
+      "rate_limit_count": 1,
+      "content_hash": "c8c7c473536ea58464fa0045cfe6cd32",
+      "initialized": true,
+      "username": "凯",
+      "last_success_time": 1749825118.4897795
     },
     "gm365": {
       "display_name": "gm365",
@@ -1324,13 +1502,21 @@
       "display_name": "Timo",
       "last_check": null,
       "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:55:36.231226"
+      "last_updated": "2025-06-13T22:31:03.409174",
+      "last_check_time": 1749825063.4091747,
+      "rate_limit_count": 7
     },
     "Luyaoyuan1": {
       "display_name": "Laolu",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:55:36.231226"
+      "last_tweet_id": "1933470479526002726#m",
+      "last_updated": "2025-06-13T22:31:02.868985",
+      "last_check_time": 1749825062.8689852,
+      "rate_limit_count": 1,
+      "content_hash": "f3fcc73c45ca280c60487d3c006f74d6",
+      "last_success_time": 1749825062.8689852,
+      "initialized": true,
+      "username": "Laolu🧙‍♂️"
     },
     "kaisercrypto": {
       "display_name": "Kaiser",
@@ -1363,8 +1549,14 @@
     "alphawifhat": {
       "display_name": "Nachi",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:55:36.231226"
+      "last_tweet_id": "1933509736214798693#m",
+      "last_updated": "2025-06-13T22:31:51.250619",
+      "last_check_time": 1749825111.25062,
+      "rate_limit_count": 6,
+      "content_hash": "53340563d004e85de110bacece5a51e1",
+      "last_success_time": 1749825111.25062,
+      "initialized": true,
+      "username": "Nachi"
     },
     "CycleStudies": {
       "display_name": "百萬Eric | Day Trader",
@@ -1381,8 +1573,13 @@
     "trading__horse": {
       "display_name": "TheHorse",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:55:36.231226"
+      "last_tweet_id": "1930721811639279849#m",
+      "last_updated": "2025-06-13T22:32:04.156084",
+      "last_check_time": 1749825124.1560845,
+      "rate_limit_count": 6,
+      "content_hash": "48abfe1627bfde1fb4dc29bded0fc9f0",
+      "initialized": true,
+      "username": "TheHorse"
     },
     "JoshuaDeuk": {
       "display_name": "Joshua | MOZAIK ",
@@ -1399,14 +1596,22 @@
     "NachoTrades": {
       "display_name": "Nacho Trades",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:55:36.231226"
+      "last_tweet_id": "1933324391212879926#m",
+      "last_updated": "2025-06-13T22:31:41.673319",
+      "last_check_time": 1749825101.6733193,
+      "rate_limit_count": 1,
+      "content_hash": "4490a391cec1bee3de0bc41fb65f972a",
+      "last_success_time": 1749825101.6733193,
+      "initialized": true,
+      "username": "Nacho Trades"
     },
     "0xENAS": {
       "display_name": "Eugene Ng Ah Sio",
       "last_check": null,
       "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:55:36.231226"
+      "last_updated": "2025-06-13T22:32:11.483792",
+      "last_check_time": 1749825131.4837923,
+      "rate_limit_count": 21
     },
     "Web3Tinkle": {
       "display_name": "Tinkle",
@@ -1436,13 +1641,21 @@
       "display_name": "Oar.bit",
       "last_check": null,
       "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:55:36.231226"
+      "last_updated": "2025-06-13T22:32:11.482824",
+      "last_check_time": 1749825131.482824,
+      "rate_limit_count": 3
     },
     "doomsdart": {
       "display_name": "Bera",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:55:36.231226"
+      "last_tweet_id": "1933393726002639186#m",
+      "last_updated": "2025-06-13T22:31:36.387928",
+      "last_check_time": 1749825096.3879285,
+      "rate_limit_count": 3,
+      "content_hash": "8e47137f576a93d221648eac547bf4af",
+      "last_success_time": 1749825096.3879285,
+      "initialized": true,
+      "username": "Bera"
     },
     "SpiderCrypto0x": {
       "display_name": "SpiderCrypto ",
@@ -1460,13 +1673,20 @@
       "display_name": "Keep",
       "last_check": null,
       "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:55:36.231226"
+      "last_updated": "2025-06-13T22:32:12.516586",
+      "last_check_time": 1749825132.5165868,
+      "rate_limit_count": 10
     },
     "BitDanceUp": {
       "display_name": "ArBitCry",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:55:36.231226"
+      "last_tweet_id": "1932794782474011048#m",
+      "last_updated": "2025-06-13T22:31:57.497443",
+      "last_check_time": 1749825117.497443,
+      "rate_limit_count": 4,
+      "content_hash": "28d49b40f4e5bd6f2ec377754878bf0a",
+      "initialized": true,
+      "username": "ArBitCry"
     },
     "taresky": {
       "display_name": "𝘁𝗮𝗿𝗲𝘀𝗸𝘆",
@@ -1477,14 +1697,25 @@
     "CryptoPainter_X": {
       "display_name": "Crypto_Painter",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:55:36.231226"
+      "last_tweet_id": "1933482231731007912#m",
+      "last_updated": "2025-06-13T22:32:12.938892",
+      "last_check_time": 1749825132.9388924,
+      "rate_limit_count": 8,
+      "content_hash": "5972c5536b2d7f830720eaafec9f0b4e",
+      "last_success_time": 1749825132.9388924,
+      "initialized": true,
+      "username": "Crypto_Painter"
     },
     "quant_arb": {
       "display_name": "Stat Arb",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:55:36.231226"
+      "last_tweet_id": "1932831515232088446#m",
+      "last_updated": "2025-06-13T22:31:04.770391",
+      "last_check_time": 1749825064.7703917,
+      "rate_limit_count": 5,
+      "content_hash": "c8630bb80e1059c4ba601aafec8dc226",
+      "initialized": true,
+      "username": "Stat Arb"
     },
     "haze0x": {
       "display_name": "Haze 𝓰𝓶𝓰𝓷𝓪𝓲",
@@ -1521,8 +1752,14 @@
     "connectfarm1": {
       "display_name": "潜水观察员 ",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:55:36.231226"
+      "last_tweet_id": "1933366712134697022#m",
+      "last_updated": "2025-06-13T22:31:46.610491",
+      "last_check_time": 1749825106.6104913,
+      "rate_limit_count": 4,
+      "content_hash": "3f9087a4d8883aeadaf74423d35973b3",
+      "last_success_time": 1749825106.6104913,
+      "initialized": true,
+      "username": "潜水观察员 🇨🇳"
     },
     "BTC_Alert_": {
       "display_name": "ALERT的会所",
@@ -1540,7 +1777,9 @@
       "display_name": "0xWizard",
       "last_check": null,
       "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:55:36.231226"
+      "last_updated": "2025-06-13T22:31:03.409706",
+      "last_check_time": 1749825063.409707,
+      "rate_limit_count": 7
     },
     "bwenews": {
       "display_name": "方程式新闻 BWEnews ",
@@ -1580,20 +1819,30 @@
     "seaify1": {
       "display_name": "seaify",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:55:36.231226"
+      "last_tweet_id": "1933046037914267809#m",
+      "last_updated": "2025-06-13T22:31:29.406026",
+      "content_hash": "477ae7782fc3c225b90f7952bbbf7f1a",
+      "last_check_time": 1749825089.4060268,
+      "initialized": true,
+      "username": "seaify"
     },
     "Michael_Liu93": {
       "display_name": "憨厚的麦总",
       "last_check": null,
       "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:55:36.231226"
+      "last_updated": "2025-06-13T22:31:03.409706",
+      "last_check_time": 1749825063.409707,
+      "rate_limit_count": 6
     },
     "0xSunNFT": {
       "display_name": "0xSun",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:55:36.231226"
+      "last_tweet_id": "1932395385580097855#m",
+      "last_updated": "2025-06-13T22:31:31.851980",
+      "content_hash": "b779012a034742a60965f719f7047462",
+      "last_check_time": 1749825091.8519804,
+      "initialized": true,
+      "username": "0xSun"
     },
     "sunwear_cn": {
       "display_name": "sunwear",
@@ -1605,12 +1854,13 @@
       "display_name": "Crypto Doggy 叫我狗总",
       "last_check": null,
       "last_tweet_id": "1933039067408810026#m",
-      "last_updated": "2025-06-13T22:26:29.930331",
-      "last_check_time": 1749824789.9303315,
-      "rate_limit_count": 1,
+      "last_updated": "2025-06-13T22:31:55.766019",
+      "last_check_time": 1749825115.7660193,
+      "rate_limit_count": 7,
       "content_hash": "3c2c69662be63e99404b620e0a0ccdbf",
       "initialized": true,
-      "username": "Crypto Doggy 叫我狗总"
+      "username": "Crypto Doggy 叫我狗总",
+      "last_success_time": 1749825115.7660193
     },
     "Anbzydd520": {
       "display_name": "狗头军师(土狗真好玩)",
@@ -1655,10 +1905,13 @@
     "HunterOnlyETH": {
       "display_name": "金狗挖掘机 | 0xDavid",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T22:26:30.926317",
-      "last_check_time": 1749824790.926318,
-      "rate_limit_count": 7
+      "last_tweet_id": "1932822636834525257#m",
+      "last_updated": "2025-06-13T22:31:49.224123",
+      "last_check_time": 1749825109.2241235,
+      "rate_limit_count": 8,
+      "content_hash": "23680ba8ae9fd0f4f911efc305ae51bd",
+      "initialized": true,
+      "username": "金狗挖掘机 | 0xDavid"
     },
     "NBGary1": {
       "display_name": "0xBitan",
@@ -1676,12 +1929,13 @@
       "display_name": "可乐",
       "last_check": null,
       "last_tweet_id": "1932655691988443325#m",
-      "last_updated": "2025-06-13T22:26:23.098247",
-      "last_check_time": 1749824783.0982475,
+      "last_updated": "2025-06-13T22:30:45.330266",
+      "last_check_time": 1749825045.330267,
       "rate_limit_count": 1,
       "content_hash": "9aee972033f89c55ff9553911011132f",
       "initialized": true,
-      "username": "可乐"
+      "username": "可乐",
+      "last_success_time": 1749825045.330267
     },
     "0xmagnolia": {
       "display_name": "magnolia",
@@ -1716,19 +1970,26 @@
     "cryp_orange": {
       "display_name": "加密橘子cryporange",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:55:36.231226"
+      "last_tweet_id": "1933394409040851312#m",
+      "last_updated": "2025-06-13T22:32:08.810198",
+      "last_check_time": 1749825128.8101988,
+      "rate_limit_count": 4,
+      "content_hash": "b88b467d9662198fc800d531fb89a16c",
+      "last_success_time": 1749825128.8101988,
+      "initialized": true,
+      "username": "加密橘子🍊cryporange 🔆"
     },
     "Yizhimao_super": {
       "display_name": "猫叔Sampson",
       "last_check": null,
       "last_tweet_id": "1931007542265868656#m",
-      "last_updated": "2025-06-13T22:26:20.941247",
-      "last_check_time": 1749824780.941248,
+      "last_updated": "2025-06-13T22:30:51.886416",
+      "last_check_time": 1749825051.8864164,
       "rate_limit_count": 1,
       "content_hash": "2dc1b44e0eaa804457024833e726703d",
       "initialized": true,
-      "username": "猫叔"
+      "username": "猫叔",
+      "last_success_time": 1749825051.8864164
     },
     "Bitfatty": {
       "display_name": "比特肥 || Bitfatty (,)",
@@ -1739,16 +2000,21 @@
     "godrealmx": {
       "display_name": "仙壤",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:55:36.231226"
+      "last_tweet_id": "1933142558135529694#m",
+      "last_updated": "2025-06-13T22:32:10.698555",
+      "last_check_time": 1749825130.6985555,
+      "rate_limit_count": 2,
+      "content_hash": "27b62679c825bd2eb9915a613b3ba4bd",
+      "initialized": true,
+      "username": "仙壤"
     },
     "DLF2216": {
       "display_name": "DLF",
       "last_check": null,
       "last_tweet_id": null,
-      "last_updated": "2025-06-13T22:26:32.158713",
-      "last_check_time": 1749824792.1587136,
-      "rate_limit_count": 2
+      "last_updated": "2025-06-13T22:31:04.769290",
+      "last_check_time": 1749825064.7692902,
+      "rate_limit_count": 9
     },
     "SlowMist_Team": {
       "display_name": "SlowMist",
@@ -1760,7 +2026,9 @@
       "display_name": "Cos(余弦)",
       "last_check": null,
       "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:55:36.231226"
+      "last_updated": "2025-06-13T22:32:11.483792",
+      "last_check_time": 1749825131.4837923,
+      "rate_limit_count": 1
     },
     "xin79690860": {
       "display_name": "Web3交互频道    Reddio (✸,✸)",
@@ -1771,8 +2039,13 @@
     "ouyoung11": {
       "display_name": "oooooyoung(吸吸喜气欧皇版)",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:55:36.231226"
+      "last_tweet_id": "1933526422167171345#m",
+      "last_updated": "2025-06-13T22:30:48.671219",
+      "content_hash": "b3ddb89ebaf4b30937fa32859d791c85",
+      "last_check_time": 1749825048.671219,
+      "last_success_time": 1749825048.671219,
+      "initialized": true,
+      "username": "oooooyoung(吸吸喜气欧皇版)"
     },
     "styleschen001": {
       "display_name": "阿晨Achen",
@@ -1784,7 +2057,9 @@
       "display_name": "Ai 姨",
       "last_check": null,
       "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:55:36.231226"
+      "last_updated": "2025-06-13T22:32:11.482289",
+      "last_check_time": 1749825131.4822893,
+      "rate_limit_count": 8
     },
     "Tryrexcrypto": {
       "display_name": "Tryrex",
@@ -1795,8 +2070,13 @@
     "WuBlockchain": {
       "display_name": "Wu Blockchain",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:55:36.231226"
+      "last_tweet_id": "1933529845922664677#m",
+      "last_updated": "2025-06-13T22:31:33.860979",
+      "content_hash": "001a81fef42dd8146a54f44b401c9cc0",
+      "last_check_time": 1749825093.8609788,
+      "last_success_time": 1749825093.8609788,
+      "initialized": true,
+      "username": "Wu Blockchain"
     },
     "cz_binance": {
       "display_name": "CZ  BNB",
@@ -1807,8 +2087,13 @@
     "EmberCN": {
       "display_name": "余烬",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:55:36.231226"
+      "last_tweet_id": "1933465937761743300#m",
+      "last_updated": "2025-06-13T22:31:43.886719",
+      "content_hash": "bc1a793f54ebd9448252cf619488199f",
+      "last_check_time": 1749825103.8867195,
+      "last_success_time": 1749825103.8867195,
+      "initialized": true,
+      "username": "余烬"
     },
     "whale_alert": {
       "display_name": "Whale Alert",
@@ -1837,8 +2122,14 @@
     "wublockchain12": {
       "display_name": "吴说区块链",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:55:36.231226"
+      "last_tweet_id": "1933529632462065987#m",
+      "last_updated": "2025-06-13T22:31:02.215733",
+      "last_check_time": 1749825062.215734,
+      "rate_limit_count": 1,
+      "content_hash": "1ca5dac0664d6f2465fc62029f2ae348",
+      "last_success_time": 1749825062.215734,
+      "initialized": true,
+      "username": "吴说区块链"
     },
     "VitalikButerin": {
       "display_name": "vitalik.eth",
@@ -1849,8 +2140,13 @@
     "elonmusk": {
       "display_name": "gorklon rust",
       "last_check": null,
-      "last_tweet_id": null,
-      "last_updated": "2025-06-13T21:55:36.231226"
+      "last_tweet_id": "1933418841457238268#m",
+      "last_updated": "2025-06-13T22:32:02.717493",
+      "content_hash": "ea99ff45526bae5cde72aeba55bb0c3f",
+      "last_check_time": 1749825122.7174933,
+      "last_success_time": 1749825122.7174933,
+      "initialized": true,
+      "username": "Elon Musk"
     }
   },
   "instances": {}

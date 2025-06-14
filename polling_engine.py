@@ -643,7 +643,6 @@ class EnhancedPollingEngine:
                         success = True
                     
                 elif response.status == 429:
-                    logger.warning(f"⏰ 用户 {user_id} 遇到速率限制: HTTP 429 [实例: {instance.url}]")
                     is_429 = True
                     # 429错误也要更新检查时间
                     self.state_manager.update_user_state(
@@ -676,7 +675,8 @@ class EnhancedPollingEngine:
             request_duration = time.time() - start_time
             if e.status == 429:
                 is_429 = True
-                logger.warning(f"💥 用户 {user_id} 429限流错误，耗时: {request_duration:.2f}秒 [实例: {instance.url}]")
+                # 只打印一条429错误信息，包含完整信息
+                logger.warning(f"⏰ 用户 {user_id} 遇到速率限制，耗时: {request_duration:.2f}秒 [实例: {instance.url}]")
             else:
                 logger.error(f"💥 用户 {user_id} HTTP错误: {e.status}，耗时: {request_duration:.2f}秒 [实例: {instance.url}]")
             success = False
