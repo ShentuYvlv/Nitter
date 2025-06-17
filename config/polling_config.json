@@ -1,0 +1,17 @@
+{
+  "PRIORITY_POLL_INTERVAL": 10,
+  "NORMAL_POLL_INTERVAL": 60,
+  "BATCH_SIZE": 15,
+  "REQUEST_TIMEOUT": 10,
+  "MAX_RETRIES": 5,
+  "REQUEST_RATE": 10,
+  "BURST_CAPACITY": 20,
+  "NITTER_INSTANCES": [
+    "http://localhost:8080",
+    "http://localhost:8081", 
+    "http://localhost:8082"
+  ],
+  "USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+  "ENABLE_LOGGING": true,
+  "LOG_LEVEL": "INFO"
+}

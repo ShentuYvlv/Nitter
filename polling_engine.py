@@ -53,9 +53,9 @@ POLLING_CONFIG_KEY = "polling_config"
 
 # 默认轮询配置
 DEFAULT_POLLING_CONFIG = {
-    "PRIORITY_POLL_INTERVAL": 10,    # 优先用户轮询间隔（秒）
-    "NORMAL_POLL_INTERVAL": 60,      # 普通用户轮询间隔（秒）
-    "BATCH_SIZE": 15,                # 每批处理的用户数
+    "PRIORITY_POLL_INTERVAL": 2,    # 优先用户轮询间隔（秒）
+    "NORMAL_POLL_INTERVAL": 2,      # 普通用户轮询间隔（秒）
+    "BATCH_SIZE": 8,                # 每批处理的用户数
     "REQUEST_TIMEOUT": 10,           # 请求超时时间（秒）
     "MAX_RETRIES": 5,                # 最大重试次数
     "REQUEST_RATE": 10.0,            # 每秒请求数限制
@@ -330,9 +330,42 @@ class EnhancedPollingEngine:
         """加载关注用户列表"""
         try:
             with open(self.following_file, 'r', encoding='utf-8') as f:
-                following_list = json.load(f)
+                data = json.load(f)
+
+            # 检查数据格式
+            if isinstance(data, list):
+                # 旧格式：直接是用户列表
+                following_list = data
+            elif isinstance(data, dict) and ('priority_users' in data or 'normal_users' in data):
+                # 新格式：分组格式
+                following_list = []
+
+                # 添加优先用户
+                priority_users = data.get('priority_users', [])
+                for user in priority_users:
+                    following_list.append({
+                        'userId': user,
+                        'username': user,
+                        'priority': True
+                    })
+
+                # 添加普通用户
+                normal_users = data.get('normal_users', [])
+                for user in normal_users:
+                    following_list.append({
+                        'userId': user,
+                        'username': user,
+                        'priority': False
+                    })
+
+                logger.info(f"加载分组格式配置: {len(priority_users)} 个优先用户, {len(normal_users)} 个普通用户")
+            else:
+                logger.error(f"不支持的配置文件格式: {type(data)}")
+                return []
+
             logger.info(f"成功加载 {len(following_list)} 个关注用户")
             return following_list
+
         except (json.JSONDecodeError, FileNotFoundError) as e:
             logger.error(f"无法加载关注列表: {e}")
             return []
@@ -912,6 +945,8 @@ class EnhancedPollingEngine:
                 pub_time = datetime.now()
             
             # 构建推文数据
+
+
             tweet_data = {
                 "id": tweet_id,
                 "user_id": user_id,
@@ -923,7 +958,7 @@ class EnhancedPollingEngine:
                 "timestamp": pub_time.isoformat(),
                 "images": json.dumps(unique_images)
             }
-                        
+
             # 添加到Redis流
             try:
                 stream_id = self.redis_client.xadd(
@@ -1260,9 +1295,9 @@ class EnhancedPollingEngine:
         
         # 初始化用户
         await self.initialize_users()
-        
-        # 发送测试推文
-        await self.send_test_tweet()
+
+        # 不再发送测试推文，避免干扰时间排序
+        # await self.send_test_tweet()
         
         cycle_count = 0
         last_rebalance_cycle = 0
@@ -1394,7 +1429,9 @@ async def main():
         action="store_true",
         help="启用调试日志"
     )
-    
+
+
+
     args = parser.parse_args()
     
     if args.debug:
